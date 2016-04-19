@@ -20,12 +20,15 @@ var vcap = vcapServices['cloudantNoSQLDB'];
 cradle.setup({host: vcap.credentials.host, port: vcap.credentials.port, auth: { username: vcap.credentials.username, password: vcap.credentials.password
 });
 
+var connection = new(cradle.Connection)().config();
+console.log('qqqqqqqqqqqqqqq cradle: ' + cradle);
+console.log('qqqqqqqqqqqqqqq conn: ' + connection);
 
-var connection = new (cradle.Connection)();
-var db = connection.database('testDB');
+//var connection = new (cradle.Connection)();
+/*var db = connection.database('testDB');
 db.create(function(err){
     console.log('sadface');
-})
+})*/
 
 //var connection = new(cradle.Connection)(host: vcap.credentials.host, port: vcap.credentials.port, auth: { username: vcap.credentials.username, password: vcap.credentials.password } );
 //console.log('connection?: ' connection);
