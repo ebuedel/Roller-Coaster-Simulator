@@ -10,7 +10,7 @@ var express = require('express');
 var cradle = require('cradle');
 
 var vcapServices = JSON.parse(process.env.VCAP_SERVICES);
-var vcap = vcapServices['cloudantNoSQLDB'];
+var vcap = vcapServices['cloudantNoSQLDB'][0];
 console.log('port: ' + vcap.credentials.username);
 //^^^ this works
 //console.log('Everything string is: ' + JSON.stringify(vcapServices));
@@ -26,8 +26,8 @@ console.log('port: ' + vcap.credentials.username);
     }
 });*/
 
-var connection = new cradle.Connection();
-console.log('qqqqqqqqqqqqqqq cradle: ' + cradle);
+//var connection = new cradle.Connection();
+//console.log('qqqqqqqqqqqqqqq cradle: ' + cradle);
 //console.log('qqqqqqqqqqqqqqq conn: ' + connection);
 
 //var connection = new (cradle.Connection)();
