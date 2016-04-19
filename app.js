@@ -9,7 +9,7 @@
 var express = require('express');
 var cradle = require('cradle');
 
-var connection = new(cradle.Connection)('http://127.0.0.1', 443, { auth: { username: '887ef523-362d-4ad0-95d3-6fcfe60e4774-bluemix', password: '5f2846b2987b9ee2c26ed33bcac9c8129eb6647dd924f47ec7169ae2cf2b52d9'}
+var connection = new(cradle.Connection)('887ef523-362d-4ad0-95d3-6fcfe60e4774-bluemix.cloudant.com', 443, { auth: { username: '887ef523-362d-4ad0-95d3-6fcfe60e4774-bluemix', password: '5f2846b2987b9ee2c26ed33bcac9c8129eb6647dd924f47ec7169ae2cf2b52d9'}
 });
 
 var db = connection.database('testing');
