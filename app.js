@@ -10,8 +10,8 @@ var express = require('express');
 var cradle = require('cradle');
 
 var vcapServices = JSON.parse(process.env.VCAP_SERVICES);
-var stuff = vcapServices['couldantNoSQLDB'][0];
-console.log('hostname??: ' + stuff.credentials.hostname);
+var stuff = vcapServices['cloudantNoSQLDB'][0];
+console.log('port??: ' + stuff.credentials.port);
 console.log('Everything string is: ' + JSON.stringify(vcapServices));
 console.log('Everything normal is: ' + vcapServices);
 
