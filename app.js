@@ -11,7 +11,7 @@ var cradle = require('cradle');
 
 var vcapServices = JSON.parse(process.env.VCAP_SERVICES);
 var vcap = vcapServices['cloudantNoSQLDB'];
-//console.log('port: ' + vcap.credentials.port);
+console.log('port: ' + vcap.credentials.username);
 //^^^ this works
 //console.log('Everything string is: ' + JSON.stringify(vcapServices));
 //console.log('Everything normal is: ' + vcapServices);
