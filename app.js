@@ -17,14 +17,14 @@ console.log('port: ' + vcap.credentials.username);
 //console.log('Everything normal is: ' + vcapServices);
 
 
-cradle.setup({
+/*cradle.setup({
     host: vcap.credentials.host,
     port: vcap.credentials.port,
     auth: {
         username: vcap.credentials.username,
         password: vcap.credentials.password 
     }
-});
+});*/
 
 var connection = new cradle.Connection();
 console.log('qqqqqqqqqqqqqqq cradle: ' + cradle);
