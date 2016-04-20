@@ -235,7 +235,8 @@ require('http').createServer(function(req, res) {
         
       // Insert document
       if(req.method == 'POST') {
-                 insert_records(req,res);           
+                
+                insert_records(req,res);           
       }
       // List documents
       else if(req.method == 'GET') {   
