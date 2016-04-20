@@ -13,7 +13,7 @@ if (process.env.VCAP_SERVICES) {
 }
 
 //Insert records into the books DB
- var insert_records = function(req, res) {
+/* var insert_records = function(req, res) {
     //Parse the process.env for the port and host that we've been assigned
     if (process.env.VCAP_SERVICES) {
           // Running on Bluemix. Parse the port and host that we've been assigned.
@@ -59,81 +59,6 @@ if (process.env.VCAP_SERVICES) {
      res.write("3 documents is inserted");
      res.end();
 }; // End insert_records
-
-function handlePost(req, res) {
-    var body = '';
-    var obj;
-
-    function handleError(err, response) {
-        if (err) return { error: err };
-    }
-
-    function handleEnd() {
-        console.log(obj);
-
-        var db = new pouchdb('users');
-        var remote = cloudant.url + '/users';
-        var opts = {};
-
-        var userNotFound = { error: 'app: User not found.' };
-        var fileNotFound = { error: 'app: File not found.' };
-        var typeNotRecognized = { error: 'app: Type not recognized.' };
-
-        db.replicate.to(remote, opts);
-        db.replicate.from(remote, opts);
-
-        if (obj.type === 'list') {
-            db.get(obj.user, function (err, response) {
-                if (obj.user in response)
-                    return { data: Object.keys(response[obj.user]) };
-                else
-                    return userNotFound;
-            }, handleError);
-        } else if (obj.type === 'get') {
-            db.get(obj.user, function (err, response) {
-                if (obj.user in response) {
-                    var files = response[obj.user];
-                    if (obj.name in files)
-                        return { data: files[obj.name] };
-                    else
-                        return fileNotFound;
-                } else {
-                    return userNotFound;
-                }
-            }, handleError);
-        } else if (obj.type === 'set') {
-            db.get(obj.user, function (err, response) {
-                if (obj.user in response) {
-                    var files = response[obj.user];
-                    if (obj.name in files) {
-                        files[obj.name] = obj.data;
-                        db.put(response);
-                        return {};
-                    } else {
-                        return fileNotFound;
-                    }
-                } else {
-                    return userNotFound;
-                }
-            }, function (err) {
-                var files = { _id: obj.users };
-                files[obj.name] = obj.data;
-                db.put(files);
-            });
-        } else {
-            return typeNotRecognized;
-        }
-    }
-
-    req.on('data', function (data) {
-        body += data;
-    });
-
-    req.on('end', function () {
-        obj = JSON.parse(body);
-        handleEnd();
-    });
-}
 
 // Update records in the books DB
 var update_records = function(req, res) {
@@ -269,11 +194,93 @@ var list_records = function(req, res) {
    
   };
 
+*/
 
 var port = (process.env.VCAP_APP_PORT || 1337);
 var host = (process.env.VCAP_APP_HOST || '0.0.0.0');
 
-//Create a Webserver and wait for REST API CRUD calls
+function handlePost(req) {
+    var userNotSpecified = { error: 'app: User not specified.' };
+    var userNotFound = { error: 'app: User not found.' };
+    var fileNotFound = { error: 'app: File not found.' };
+    var typeNotRecognized = { error: 'app: Type not recognized.' };
+    
+    var body = '';
+    var obj;
+
+    function handleError(err, response) {
+        if (err) return { error: err };
+    }
+
+    function handleEnd() {
+        console.log(obj);
+
+        if (typeof obj.user === 'undefined') return userNotSpecified;
+
+        var db = new pouchdb('users');
+        var remote = cloudant.url + '/users';
+        var opts = {};
+
+        db.replicate.to(remote, opts);
+        db.replicate.from(remote, opts);
+
+        if (obj.type === 'list') {
+            db.get(obj.user, function (err, response) {
+                if (obj.user in response)
+                    return { data: Object.keys(response[obj.user]) };
+                else
+                    return userNotFound;
+            }, handleError);
+        } else if (obj.type === 'get') {
+            db.get(obj.user, function (err, response) {
+                if (obj.user in response) {
+                    var files = response[obj.user];
+                    if (obj.name in files)
+                        return { data: files[obj.name] };
+                    else
+                        return fileNotFound;
+                } else {
+                    return userNotFound;
+                }
+            }, handleError);
+        } else if (obj.type === 'set') {
+            db.get(obj.user, function (err, response) {
+                if (obj.user in response) {
+                    var files = response[obj.user];
+                    if (obj.name in files) {
+                        if (typeof obj.data === 'undefined') {
+                            files[obj.name] = obj.data;
+                            db.put(response);
+                        } else {
+                            db.remove(response, handleError);
+                        }
+                        return {};
+                    } else {
+                        return fileNotFound;
+                    }
+                } else {
+                    return userNotFound;
+                }
+            }, function (err) {
+                var files = { _id: obj.users };
+                files[obj.name] = obj.data;
+                db.put(files);
+            });
+        } else {
+            return typeNotRecognized;
+        }
+    }
+
+    req.on('data', function (data) {
+        body += data;
+    });
+
+    req.on('end', function () {
+        obj = JSON.parse(body);
+        handleEnd();
+    });
+}
+
 require('http').createServer(function(req, res) {     
     if (req.url === '/index.html' || req.url === '/') {
         fs.readFile('./public/index.html', function (err, data){
@@ -309,7 +316,7 @@ require('http').createServer(function(req, res) {
         
       // Insert document
     if(req.method == 'POST') {
-        var obj = handlePost(req, res);
+        var obj = handlePost(req);
         res.writeHead(200, {'Content-Type': 'application/json'});
         res.write(JSON.stringify(obj));
         res.end();
