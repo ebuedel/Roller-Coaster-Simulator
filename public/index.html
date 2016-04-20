@@ -4,11 +4,9 @@
 
 <h1>Roller Coaster Simulator</h1>
 
-<textarea id="data"></textarea>
+<label>User name</label><input id="user"></input>
 
-<label>User name</label><textarea id="user"></textarea>
-
-<label>File name</label><textarea id="file"></textarea>
+<label>File name</label><input id="file"></input>
 
 <label for="request type"></label>
 
@@ -20,9 +18,13 @@
 
 <button>Submit</button>
 
+<br><br>
+
+<textarea id="data"></textarea>
+
 <script>
     var url = 'roller-coaster-simulator.mybluemix.net';
-    var request = document.getElementById("data");
+    var data = document.getElementById("data");
     var filename = document.getElementById("file");
     var username = document.getElementById("user");
     var requestType = document.getElementById("select");
@@ -39,15 +41,15 @@
             
             var obj = {};
             obj.user = username.value;
-            obj.request = requestType.value;
+            obj.type = requestType.value;
             obj.file = filename.value;
-            obj.data = request.value;
+            obj.data = data.value;
 
-            alert('---sent obj contents---\n' +
+            /*alert('---sent obj contents---\n' +
                   'user:' + obj.user + '\n' +
-                  'request:' + obj.request + '\n' +
+                  'request:' + obj.type + '\n' +
                   'file:' + obj.file + '\n' +
-                  'data:' + obj.data);
+                  'data:' + obj.data);*/
 
             request.send(JSON.stringify(obj));
         });

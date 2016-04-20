@@ -60,6 +60,80 @@ if (process.env.VCAP_SERVICES) {
      res.end();
 }; // End insert_records
 
+function handlePost(req, res) {
+    var body = '';
+    var obj;
+
+    function handleError(err, response) {
+        if (err) return { error: err };
+    }
+
+    function handleEnd() {
+        console.log(obj);
+
+        var db = new pouchdb('users');
+        var remote = cloudant.url + '/users';
+        var opts = {};
+
+        var userNotFound = { error: 'app: User not found.' };
+        var fileNotFound = { error: 'app: File not found.' };
+        var typeNotRecognized = { error: 'app: Type not recognized.' };
+
+        db.replicate.to(remote, opts);
+        db.replicate.from(remote, opts);
+
+        if (obj.type === 'list') {
+            db.get(obj.user, function (err, response) {
+                if (obj.user in response)
+                    return { data: Object.keys(response[obj.user]) };
+                else
+                    return userNotFound;
+            }, handleError);
+        } else if (obj.type === 'get') {
+            db.get(obj.user, function (err, response) {
+                if (obj.user in response) {
+                    var files = response[obj.user];
+                    if (obj.name in files)
+                        return { data: files[obj.name] };
+                    else
+                        return fileNotFound;
+                } else {
+                    return userNotFound;
+                }
+            }, handleError);
+        } else if (obj.type === 'set') {
+            db.get(obj.user, function (err, response) {
+                if (obj.user in response) {
+                    var files = response[obj.user];
+                    if (obj.name in files) {
+                        files[obj.name] = obj.data;
+                        db.put(response);
+                        return {};
+                    } else {
+                        return fileNotFound;
+                    }
+                } else {
+                    return userNotFound;
+                }
+            }, function (err) {
+                var files = { _id: obj.users };
+                files[obj.name] = obj.data;
+                db.put(files);
+            });
+        } else {
+            return typeNotRecognized;
+        }
+    }
+
+    req.on('data', function (data) {
+        body += data;
+    });
+
+    req.on('end', function () {
+        obj = JSON.parse(body);
+        handleEnd();
+    });
+}
 
 // Update records in the books DB
 var update_records = function(req, res) {
@@ -234,11 +308,11 @@ require('http').createServer(function(req, res) {
      // Perform CRUD operations through REST APIs
         
       // Insert document
-      if(req.method == 'POST') {
-                
-                insert_records(req,res);           
-      }
-      // List documents
+    if(req.method == 'POST') {
+              //insert_records(req,res);           
+        handlePost(req, res);
+    }
+      /*// List documents
       else if(req.method == 'GET') {   
               list_records(req,res);              
        }
@@ -249,7 +323,7 @@ require('http').createServer(function(req, res) {
         // Delete a document
          else if(req.method == 'DELETE') {
               delete_record(req,res);
-        }      
+        }*/      
   
 }).listen(port, host);
 console.log("Connected to port =" + port + " host =  " + host);
