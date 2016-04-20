@@ -1,19 +1,8 @@
-/*eslint-env node*/
-
-//------------------------------------------------------------------------------
-// node.js starter application for Bluemix
-//------------------------------------------------------------------------------
-
-// This application uses express as its web server
-// for more info, see: http://expressjs.com
 var express = require('express');
 var cradle = require('cradle');
 
 var vcapServices = JSON.parse(process.env.VCAP_SERVICES);
 var vcap = vcapServices.cloudantNoSQLDB[0];
-//^^^ this works
-//console.log('Everything string is: ' + JSON.stringify(vcapServices));
-//console.log('Everything normal is: ' + vcapServices);
 
 cradle.setup({
     host: vcap.credentials.host,
@@ -28,14 +17,10 @@ var connection = new cradle.Connection();
 
 console.log(JSON.stringify(connection));
 
-//console.log('qqqqqqqqqqqqqqq cradle: ' + cradle);
-//console.log('qqqqqqqqqqqqqqq conn: ' + connection);
-
-//var connection = new (cradle.Connection)();
-/*var db = connection.database('testDB');
+var db = connection.database('testDataBase');
 db.create(function(err){
     console.log('sadface');
-})*/
+});
 
 //var connection = new(cradle.Connection)(host: vcap.credentials.host, port: vcap.credentials.port, auth: { username: vcap.credentials.username, password: vcap.credentials.password } );
 //console.log('connection?: ' connection);
