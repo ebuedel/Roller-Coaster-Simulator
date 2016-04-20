@@ -29,7 +29,7 @@ function handlePost(req) {
     }
 
     function handleEnd() {
-        console.log(obj);
+        console.log('Request: ' + JSON.stringify(obj));
 
         if (typeof obj.user === 'undefined') return userNotSpecified;
 
@@ -89,11 +89,18 @@ function handlePost(req) {
 
     req.on('data', function (data) {
         body += data;
+        if (body.length > 1e5) {
+            request.connection.destroy();
+        }
     });
 
     req.on('end', function () {
-        obj = JSON.parse(body);
-        handleEnd();
+        try {
+            obj = JSON.parse(body);
+            handleEnd();
+        } catch (err) {
+            return { error: 'app: ' + err };
+        }
     });
 }
 
@@ -117,6 +124,7 @@ require('http').createServer(function(req, res) {
     
     if (req.method == 'POST') {
         var obj = handlePost(req);
+        console.log('Response: ' + JSON.stringify(obj));
         res.writeHead(200, {'Content-Type': 'application/json'});
         res.write(JSON.stringify(obj));
         res.end();
