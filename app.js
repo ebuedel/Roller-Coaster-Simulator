@@ -19,7 +19,7 @@ console.log(JSON.stringify(connection));
 
 var db = connection.database('testDataBase');
 db.create(function(err){
-    console.log('sadface');
+    console.log('some random error: ' + err);
 });
 
 //var connection = new(cradle.Connection)(host: vcap.credentials.host, port: vcap.credentials.port, auth: { username: vcap.credentials.username, password: vcap.credentials.password } );
