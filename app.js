@@ -309,8 +309,10 @@ require('http').createServer(function(req, res) {
         
       // Insert document
     if(req.method == 'POST') {
-              //insert_records(req,res);           
-        handlePost(req, res);
+        var obj = handlePost(req, res);
+        res.writeHead(200, {'Content-Type': 'application/json'});
+        res.write(JSON.stringify(obj));
+        res.end();
     }
       /*// List documents
       else if(req.method == 'GET') {   
