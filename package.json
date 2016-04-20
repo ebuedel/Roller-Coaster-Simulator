@@ -8,7 +8,9 @@
   "dependencies": {
     "cfenv": "1.0.x",
     "cradle": "^0.7.1",
-    "express": "4.13.x"
+    "express": "4.13.x",
+    "http": "0.0.0",
+    "pouchdb": "^5.3.1"
   },
   "repository": {},
   "engines": {
