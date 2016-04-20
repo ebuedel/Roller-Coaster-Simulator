@@ -4,7 +4,17 @@
 
 <h1>Roller Coaster Simulator</h1>
 
-<script>
-    alert('Hello, world!');
-</script>
+<textarea></textarea>
+<button>Submit</button>
 
+<script>
+    var url = 'roller-coaster-simulator.mybluemix.net';
+    var textarea = document.getElementsByTagName('textarea')[0];
+    document.getElementsByTagName('button')[0]
+        .addEventListener('click', function () { 
+            var request = new XMLHttpRequest();
+            request.open('POST', url, true);
+            request.setRequestHeader('Content-Type', 'application/json');
+            request.send(textarea.value);
+        });
+</script>
