@@ -15,7 +15,7 @@ if (process.env.VCAP_SERVICES) {
 var port = (process.env.VCAP_APP_PORT || 1337);
 var host = (process.env.VCAP_APP_HOST || '0.0.0.0');
 
-function handlePost(req) {
+function handlePost(req, callback) {
     var userNotSpecified = { error: 'app: User not specified.' };
     var userNotFound = { error: 'app: User not found.' };
     var fileNotFound = { error: 'app: File not found.' };
@@ -90,16 +90,17 @@ function handlePost(req) {
     req.on('data', function (data) {
         body += data;
         if (body.length > 1e5) {
-            request.connection.destroy();
+            req.connection.destroy();
         }
     });
 
     req.on('end', function () {
         try {
             obj = JSON.parse(body);
-            handleEnd();
+            var response = handleEnd();
+            callback(response);
         } catch (err) {
-            return { error: 'app: ' + err };
+            callback(handleError(err));
         }
     });
 }
@@ -123,11 +124,12 @@ require('http').createServer(function(req, res) {
      }
     
     if (req.method == 'POST') {
-        var obj = handlePost(req);
-        console.log('Response: ' + JSON.stringify(obj));
-        res.writeHead(200, {'Content-Type': 'application/json'});
-        res.write(JSON.stringify(obj));
-        res.end();
+        handlePost(req, function (responseObj) {
+            console.log('Response: ' + JSON.stringify(obj));
+            res.writeHead(200, {'Content-Type': 'application/json'});
+            res.write(JSON.stringify(obj));
+            res.end();
+        });
     } else {
         res.end();
     }
