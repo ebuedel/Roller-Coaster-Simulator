@@ -4,12 +4,28 @@
 
 <h1>Roller Coaster Simulator</h1>
 
-<textarea></textarea>
+<textarea id="data"></textarea>
+
+<label>User name</label><textarea id="user"></textarea>
+
+<label>File name</label><textarea id="file"></textarea>
+
+<label for="request type"></label>
+
+<select id="select">
+    <option value="list">list</option>
+    <option value="get">get</option>
+    <option value="set" selected>set</option>
+</select>
+
 <button>Submit</button>
 
 <script>
     var url = 'roller-coaster-simulator.mybluemix.net';
-    var textarea = document.getElementsByTagName('textarea')[0];
+    var request = document.getElementById("data");
+    var filename = document.getElementById("file");
+    var username = document.getElementById("user");
+    var requestType = document.getElementById("select");
     document.getElementsByTagName('button')[0]
         .addEventListener('click', function () { 
             var request = new XMLHttpRequest();
@@ -20,6 +36,19 @@
             });
             request.open('POST', url, true);
             request.setRequestHeader('Content-Type', 'application/json');
-            request.send(textarea.value);
+            
+            var obj = {};
+            obj.user = username.value;
+            obj.request = requestType.value;
+            obj.file = filename.value;
+            obj.data = request.value;
+
+            alert('---sent obj contents---\n'
+                  'user:' + obj.user + '\n'
+                  'request:' + obj.request + '\n'
+                  'file:' + obj.file + '\n'
+                  'data:' + obj.data);
+
+            request.send(JSON.stringify(obj));
         });
 </script>
