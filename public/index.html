@@ -43,10 +43,10 @@
             obj.file = filename.value;
             obj.data = request.value;
 
-            alert('---sent obj contents---\n'
-                  'user:' + obj.user + '\n'
-                  'request:' + obj.request + '\n'
-                  'file:' + obj.file + '\n'
+            alert('---sent obj contents---\n' +
+                  'user:' + obj.user + '\n' +
+                  'request:' + obj.request + '\n' +
+                  'file:' + obj.file + '\n' +
                   'data:' + obj.data);
 
             request.send(JSON.stringify(obj));
