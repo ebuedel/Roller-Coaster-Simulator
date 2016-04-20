@@ -1,4 +1,3 @@
-var cradle = require('cradle');
 var pouchdb = require('pouchdb');
 var http = require('http');
 
