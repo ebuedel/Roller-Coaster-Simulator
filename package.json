@@ -6,6 +6,7 @@
     "start": "node app.js"
   },
   "dependencies": {
+    "fs": "0.0.2",
     "http": "0.0.0",
     "pouchdb": "^5.3.1"
   },
