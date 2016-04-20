@@ -1,8 +1,7 @@
 var cradle = require('cradle');
-//var cfenv = require('cfenv');
-
-// Obtain the pouchdb interface from VCAP_SERVICES
+var pouchdb = require('pouchdb');
 var http = require('http');
+
 if (process.env.VCAP_SERVICES) {
       // Running on Bluemix. Parse the process.env for the port and host that we've been assigned.
       var env = JSON.parse(process.env.VCAP_SERVICES);
