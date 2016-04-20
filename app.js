@@ -1,5 +1,6 @@
-var pouchdb = require('pouchdb');
+var fs = require('fs');
 var http = require('http');
+var pouchdb = require('pouchdb');
 
 if (process.env.VCAP_SERVICES) {
       // Running on Bluemix. Parse the process.env for the port and host that we've been assigned.
@@ -200,6 +201,13 @@ var host = (process.env.VCAP_APP_HOST || '0.0.0.0');
 
 //Create a Webserver and wait for REST API CRUD calls
 require('http').createServer(function(req, res) {     
+    if (req.url === '/index.html' || req.url === '/') {
+        fs.readFile('./public/index.html', function (err, data){
+            res.end(data);
+        });
+        return;
+    }
+
     //Set up the DB connection
      if (process.env.VCAP_SERVICES) {
           // Running on Bluemix. Parse for  the port and host that we've been assigned.
