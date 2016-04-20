@@ -13,16 +13,24 @@ cradle.setup({
     }
 });
 
-var connection = new cradle.Connection();
+var app = express();
 
-console.log(JSON.stringify(connection));
-
-var db = connection.database('testDataBase');
-db.create(function(err){
-    console.log('some random error: ' + err);
+app.get('/', function (req, res) {
+  res.send('Hello World!');
 });
 
-connection.end();
+app.listen(3000, function () {
+    console.log('Example app listening on port 3000!');
+    var connection = new cradle.Connection();
+
+    console.log(JSON.stringify(connection));
+
+    var db = connection.database('testDataBase');
+    db.create(function(err){
+        console.log('some random error: ' + err);
+    });
+
+});
 
 //var connection = new(cradle.Connection)(host: vcap.credentials.host, port: vcap.credentials.port, auth: { username: vcap.credentials.username, password: vcap.credentials.password } );
 //console.log('connection?: ' connection);
