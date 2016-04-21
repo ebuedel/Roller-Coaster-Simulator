@@ -1,6 +1,22 @@
 'use strict';
 
 var fs = require('fs');
+process.env.VCAP_SERVICES = JSON.stringify({
+    "cloudantNoSQLDB": [
+      {
+         "name": "Cloudant NoSQL DB-8z",
+         "label": "cloudantNoSQLDB",
+         "plan": "Shared",
+         "credentials": {
+            "username": "f6afa7c1-0c96-4b4b-82e0-e649b8b1d6c5-bluemix",
+            "password": "807fc03f1359a1aeb7f0338d623cab60bc3d2eda1154b250244033d8c6814c27",
+            "host": "f6afa7c1-0c96-4b4b-82e0-e649b8b1d6c5-bluemix.cloudant.com",
+            "port": 443,
+            "url": "https://f6afa7c1-0c96-4b4b-82e0-e649b8b1d6c5-bluemix:807fc03f1359a1aeb7f0338d623cab60bc3d2eda1154b250244033d8c6814c27@f6afa7c1-0c96-4b4b-82e0-e649b8b1d6c5-bluemix.cloudant.com"
+         }
+      }
+   ]
+});
 var http = require('http');
 var pouchdb = require('pouchdb');
 
@@ -43,7 +59,7 @@ function handlePostRequest(requestObject, callback, handleError) {
         set: function (error, userData) {
             if (!isString(key) || !key.length) {
                 callback(keyNotSpecified);
-            } else if (!isUndefined(userData)) {
+            } else if (!isUndefined(userData) && key in userData.pairs) {
                 if (value.length) {
                     userData.pairs[key] = value;
                     db.put(userData);
