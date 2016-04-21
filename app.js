@@ -24,7 +24,7 @@ function handlePost(req, callback) {
     var body = '';
     var obj;
 
-    function handleError(err, response) {
+    function handleError(err) {
         if (err) return { error: err };
     }
 
@@ -125,9 +125,9 @@ require('http').createServer(function(req, res) {
     
     if (req.method == 'POST') {
         handlePost(req, function (responseObj) {
-            console.log('Response: ' + JSON.stringify(obj));
+            console.log('Response: ' + JSON.stringify(responseObj));
             res.writeHead(200, {'Content-Type': 'application/json'});
-            res.write(JSON.stringify(obj));
+            res.write(JSON.stringify(responseObj));
             res.end();
         });
     } else {
