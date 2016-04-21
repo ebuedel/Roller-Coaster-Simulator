@@ -1,142 +1,159 @@
+'use strict';
+
 var fs = require('fs');
 var http = require('http');
 var pouchdb = require('pouchdb');
 
-if (process.env.VCAP_SERVICES) {
-      // Running on Bluemix. Parse the process.env for the port and host that we've been assigned.
-      var env = JSON.parse(process.env.VCAP_SERVICES);
-      var host = process.env.VCAP_APP_HOST; 
-      var port = process.env.VCAP_APP_PORT;
-      console.log('VCAP_SERVICES: %s', process.env.VCAP_SERVICES);    
-      // Also parse out Cloudant settings.
-      var cloudant = env['cloudantNoSQLDB'][0]['credentials'];
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// XXX: Temporary. Remove when done testing locally!
+process.env.VCAP_SERVICES = JSON.stringify({
+   "cloudantNoSQLDB": [
+      {
+         "name": "Cloudant NoSQL DB-8z",
+         "label": "cloudantNoSQLDB",
+         "plan": "Shared",
+         "credentials": {
+            "username": "f6afa7c1-0c96-4b4b-82e0-e649b8b1d6c5-bluemix",
+            "password": "807fc03f1359a1aeb7f0338d623cab60bc3d2eda1154b250244033d8c6814c27",
+            "host": "f6afa7c1-0c96-4b4b-82e0-e649b8b1d6c5-bluemix.cloudant.com",
+            "port": 443,
+            "url": "https://f6afa7c1-0c96-4b4b-82e0-e649b8b1d6c5-bluemix:807fc03f1359a1aeb7f0338d623cab60bc3d2eda1154b250244033d8c6814c27@f6afa7c1-0c96-4b4b-82e0-e649b8b1d6c5-bluemix.cloudant.com"
+         }
+      }
+   ]
+});
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+function isString(x) {
+    return typeof x === 'string';
 }
-//aserbfa
 
-var port = (process.env.VCAP_APP_PORT || 1337);
-var host = (process.env.VCAP_APP_HOST || '0.0.0.0');
+function isUndefined(x) {
+    return typeof x === 'undefined';
+}
 
-function handlePost(req, callback) {
-    var userNotSpecified = { error: 'app: User not specified.' };
-    var userNotFound = { error: 'app: User not found.' };
-    var fileNotFound = { error: 'app: File not found.' };
-    var typeNotRecognized = { error: 'app: Type not recognized.' };
-    
-    var body = '';
-    var obj;
+function handlePostRequest(requestObject, callback, handleError) {
+    var typeNotRecognized = { error: 'Type not recognized.' };
+    var userNotSpecified = { error: 'User not specified.' };
+    var userNotFound = { error: 'User not found.' };
+    var keyNotSpecified = { error: 'Key not specified.' };
+    var keyNotFound = { error: 'Key not found.' };
 
-    function handleEnd() {
-        console.log('Request: ' + JSON.stringify(obj));
+    var type = requestObject.type;
+    var user = requestObject.user;
+    var key = requestObject.key;
+    var value = requestObject.value;
 
-        if (typeof obj.user === 'undefined') return userNotSpecified;
+    var handlers = {
+        list: function (error, userData) {
+            return callback(!isUndefined(userData) ? { value: Object.keys(userData.pairs || {}) } : userNotFound);
+        },
 
+        get: function (error, userData) {
+            if (isUndefined(userData)) {
+                callback(userNotFound);
+            } else if (!isString(key) || !key.length) {
+                callback(keyNotSpecified);
+            } else {
+                var pairs = userData.pairs;
+                callback(key in pairs ? { value: pairs[key] } : keyNotFound);
+            }
+        },
+
+        set: function (error, userData) {
+            if (!isString(key) || !key.length) {
+                callback(keyNotSpecified);
+            } else if (!isUndefined(userData)) {
+                if (value.length) {
+                    userData.pairs[key] = value;
+                    db.put(userData);
+                } else {
+                    delete userData.pairs[key];
+                    if (Object.keys(userData.pairs).length)
+                        db.put(userData);
+                    else
+                        db.remove(userData, handleError);
+                }
+                callback({});
+            } else {
+                var pairs = {};
+                pairs[key] = value;
+                db.put({ _id: user, pairs: pairs });
+                callback({});
+            }
+        }
+    }
+
+    var handler = handlers[type];
+
+    if (!handler) {
+        callback(typeNotRecognized);
+    } else if (!isString(user) || !user.length) {
+        callback(userNotSpecified);
+    } else {
+        var services = JSON.parse(process.env.VCAP_SERVICES);
+        var cloudant = services.cloudantNoSQLDB[0].credentials;
         var db = new pouchdb('users');
         var remote = cloudant.url + '/users';
         var opts = {};
 
         db.replicate.to(remote, opts);
         db.replicate.from(remote, opts);
-
-        if (obj.type === 'list') {
-            db.get(obj.user, function (err, response) {
-                console.log('list DB_RESPONSE: ' + response);
-                //if (obj.user in response)
-                if (response !== 'undefined')
-                    return { data: Object.keys(response[obj.user]) };
-                else
-                    return userNotFound;
-            }, function (err) {
-                return { error: err };
-            });
-        } else if (obj.type === 'get') {
-            db.get(obj.user, function (err, response) {
-                console.log('get DB_RESPONSE: ' + response);
-                if (response !== 'undefined') {
-                    var files = response[obj.user];
-                    if (obj.name in files)
-                        return { data: files[obj.name] };
-                    else
-                        return fileNotFound;
-                } else {
-                    return userNotFound;
-                }
-            }, function (err) {
-                return { error: err };
-            });
-        } else if (obj.type === 'set') {
-            db.get(obj.user, function (err, response) {
-                console.log('set DB_RESPONSE: ' + response);
-                if (response !== 'undefined') {
-                    var files = response[obj.user];
-                    if (obj.name in files) {
-                        if (typeof obj.data === 'undefined') {
-                            files[obj.name] = obj.data;
-                            db.put(response);
-                        } else {
-                            db.remove(response, handleError);
-                        }
-                        return {};
-                    } else {
-                        return fileNotFound;
-                    }
-                } else {
-                    var files = { _id: obj.user };
-                    files[obj.name] = obj.data;
-                    db.put(files);
-                }
-            }, function (err) {
-                return { error: err };
-            });
-        } else {
-            return typeNotRecognized;
-        }
+        db.get(user, handler, handleError);            
     }
-
-    req.on('data', function (data) {
-        body += data;
-        if (body.length > 1e5) {
-            req.connection.destroy();
-        }
-    });
-
-    req.on('end', function () {
-        try {
-            obj = JSON.parse(body);
-            var response = handleEnd();
-            console.log('SERVER_RESPONSE: ' + JSON.stringify(response));
-            callback(response);
-        } catch (err) {
-            callback(handleError(err));
-        }
-    });
 }
 
-require('http').createServer(function(req, res) {     
-    if (req.url === '/index.html' || req.url === '/') {
-        fs.readFile('./public/index.html', function (err, data){
-            res.end(data);
-        });
-        return;
-    }
+function handleRequest(request, response) {
+    var handlers = {
+        GET: function (request, response) {
+            if (request.url === '/' || request.url === '/index.html') {
+                fs.readFile('./public/index.html', function (err, data) {
+                    response.end(data);
+                });
+            } else {
+                response.writeHead(404, {'Content-Type': 'text/plain'});
+                response.write('404 - File not Found');
+                response.end();
+            }
+        },
 
-     if (process.env.VCAP_SERVICES) {
-          var env = JSON.parse(process.env.VCAP_SERVICES);
-          var host = process.env.VCAP_APP_HOST; 
-          var port = process.env.VCAP_APP_PORT;
+        POST: function (request, response) {
+            var body = '';
 
-          console.log('VCAP_SERVICES: %s', process.env.VCAP_SERVICES);    
+            request.on('data', function (data) {
+                body += data;
+                if (body.length > 1e5) {
+                    request.connection.destroy();
+                }
+            });
 
-          var cloudant = env['cloudantNoSQLDB'][0]['credentials'];
-     }
-    
-    if (req.method == 'POST') {
-        handlePost(req, function (responseObj) {
-            res.writeHead(200, {'Content-Type': 'application/json'});
-            res.write(JSON.stringify(responseObj));
-            res.end();
-        });
-    } else {
-        res.end();
-    }
-}).listen(port, host);
-console.log("Connected to port =" + port + " host =  " + host);
+            request.on('end', function () {
+                function handleError(error) {
+                    console.log(error);
+                }
+
+                try {
+                    var obj = JSON.parse(body);
+                    handlePostRequest(obj, function (responseObj) {
+                        response.writeHead(200, {'Content-Type': 'application/json'});
+                        response.write(JSON.stringify(responseObj));
+                        response.end();
+                    }, handleError);
+                } catch (err) {
+                    handleError(err);
+                }
+            });
+        }
+    };
+
+    return handlers[request.method](request, response);
+}
+
+(function () {
+    var port = (process.env.VCAP_APP_PORT || 1337);
+    var host = (process.env.VCAP_APP_HOST || '0.0.0.0');
+
+    http.createServer(handleRequest).listen(port, host);
+
+    console.log("Connected to port = " + port + " host = " + host);    
+}());

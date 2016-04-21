@@ -1,56 +1,48 @@
-<!DOCTYPE html>
+<!doctype html>
 
-<title>Roller Coaster Simulator</title>
+<title>String Server</title>
 
-<h1>Roller Coaster Simulator</h1>
+<h1>String Server</h1>
 
-<label>User name</label><input id="user"></input>
-
-<label>File name</label><input id="file"></input>
-
-<label for="request type"></label>
-
+<label>User: </label><input id="user"></input>
+<label>Key: </label><input id="key"></input>
 <select id="select">
     <option value="list">list</option>
     <option value="get">get</option>
     <option value="set" selected>set</option>
 </select>
-
 <button>Submit</button>
-
 <br><br>
 
-<textarea id="data"></textarea>
+<textarea rows="8" cols="80" id="value"></textarea>
+
+<h2>Log</h2>
+<pre id="log"></pre>
 
 <script>
     var url = 'roller-coaster-simulator.mybluemix.net';
-    var data = document.getElementById("data");
-    var filename = document.getElementById("file");
-    var username = document.getElementById("user");
-    var requestType = document.getElementById("select");
-    document.getElementsByTagName('button')[0]
-        .addEventListener('click', function () { 
-            var request = new XMLHttpRequest();
-            request.addEventListener('readystatechange', function () {
-                if (request.readyState === 4) {
-                    alert(request.response);
-                }
-            });
-            request.open('POST', url, true);
-            request.setRequestHeader('Content-Type', 'application/json');
-            
-            var obj = {};
-            obj.user = username.value;
-            obj.type = requestType.value;
-            obj.file = filename.value;
-            obj.data = data.value;
+    var button = document.getElementsByTagName('button')[0];
 
-            /*alert('---sent obj contents---\n' +
-                  'user:' + obj.user + '\n' +
-                  'request:' + obj.type + '\n' +
-                  'file:' + obj.file + '\n' +
-                  'data:' + obj.data);*/
-
-            request.send(JSON.stringify(obj));
+    var type = document.getElementById('select');
+    var user = document.getElementById('user');
+    var key = document.getElementById('key');
+    var value = document.getElementById('value');
+    var log = document.getElementById('log');
+    
+    button.addEventListener('click', function () { 
+        var request = new XMLHttpRequest();
+        request.addEventListener('readystatechange', function () {
+            if (request.readyState === 4)
+                log.textContent += request.response + '\n';
         });
+
+        request.open('POST', url, true);
+        request.setRequestHeader('Content-Type', 'application/json');
+        request.send(JSON.stringify({
+            type: type.value,
+            user: user.value,
+            key: key.value,
+            value: value.value
+        }));
+    });
 </script>
