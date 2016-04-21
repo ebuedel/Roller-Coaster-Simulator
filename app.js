@@ -43,7 +43,7 @@ function handlePost(req, callback) {
 
         if (obj.type === 'list') {
             db.get(obj.user, function (err, response) {
-                if (response !== 'undefined') {
+                if (response !== 'undefined')
                     return { data: Object.keys(response[obj.user]) };
                 else
                     return userNotFound;
