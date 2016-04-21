@@ -24,11 +24,6 @@ function handlePost(req, callback) {
     var body = '';
     var obj;
 
-    function handleError(err) {
-        console.log('ERROR!!!!!!: ' + JSON.stringify(err));
-        if (err) return { error: JSON.stringify(err) };
-    }
-
     function handleEnd() {
         console.log('Request: ' + JSON.stringify(obj));
 
@@ -43,13 +38,17 @@ function handlePost(req, callback) {
 
         if (obj.type === 'list') {
             db.get(obj.user, function (err, response) {
+                console.log('list DB_RESPONSE: ' + response);
                 if (response !== 'undefined')
                     return { data: Object.keys(response[obj.user]) };
                 else
                     return userNotFound;
-            }, handleError);
+            }, function (err) {
+                return { error: err }
+            });
         } else if (obj.type === 'get') {
             db.get(obj.user, function (err, response) {
+                console.log('get DB_RESPONSE: ' + response);
                 if (response !== 'undefined') {
                     var files = response[obj.user];
                     if (obj.name in files)
@@ -59,9 +58,12 @@ function handlePost(req, callback) {
                 } else {
                     return userNotFound;
                 }
-            }, handleError);
+            }, function (err) {
+                return { error: err }
+            });
         } else if (obj.type === 'set') {
             db.get(obj.user, function (err, response) {
+                console.log('set DB_RESPONSE: ' + response);
                 if (response !== 'undefined') {
                     var files = response[obj.user];
                     if (obj.name in files) {
@@ -80,7 +82,9 @@ function handlePost(req, callback) {
                     files[obj.name] = obj.data;
                     db.put(files);
                 }
-            }, handleError);
+            }, function (err) {
+                return { error: err }
+            });
         } else {
             return typeNotRecognized;
         }
@@ -97,7 +101,7 @@ function handlePost(req, callback) {
         try {
             obj = JSON.parse(body);
             var response = handleEnd();
-            console.log('RESPONSE: ' + JSON.stringify(response));
+            console.log('SERVER_RESPONSE: ' + JSON.stringify(response));
             callback(response);
         } catch (err) {
             callback(handleError(err));
