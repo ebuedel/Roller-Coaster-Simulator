@@ -43,14 +43,14 @@ function handlePost(req, callback) {
 
         if (obj.type === 'list') {
             db.get(obj.user, function (err, response) {
-                if (obj.user in response)
+                if (response !== 'undefined') {
                     return { data: Object.keys(response[obj.user]) };
                 else
                     return userNotFound;
             }, handleError);
         } else if (obj.type === 'get') {
             db.get(obj.user, function (err, response) {
-                if (obj.user in response) {
+                if (response !== 'undefined') {
                     var files = response[obj.user];
                     if (obj.name in files)
                         return { data: files[obj.name] };
@@ -62,7 +62,7 @@ function handlePost(req, callback) {
             }, handleError);
         } else if (obj.type === 'set') {
             db.get(obj.user, function (err, response) {
-                if (obj.user in response) {
+                if (response !== 'undefined') {
                     var files = response[obj.user];
                     if (obj.name in files) {
                         if (typeof obj.data === 'undefined') {
@@ -76,13 +76,11 @@ function handlePost(req, callback) {
                         return fileNotFound;
                     }
                 } else {
-                    return userNotFound;
+                    var files = { _id: obj.user };
+                    files[obj.name] = obj.data;
+                    db.put(files);
                 }
-            }, function (err) {
-                var files = { _id: obj.users };
-                files[obj.name] = obj.data;
-                db.put(files);
-            });
+            }, handleError);
         } else {
             return typeNotRecognized;
         }
