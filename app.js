@@ -11,6 +11,7 @@ if (process.env.VCAP_SERVICES) {
       // Also parse out Cloudant settings.
       var cloudant = env['cloudantNoSQLDB'][0]['credentials'];
 }
+//aserbfa
 
 var port = (process.env.VCAP_APP_PORT || 1337);
 var host = (process.env.VCAP_APP_HOST || '0.0.0.0');
@@ -44,7 +45,7 @@ function handlePost(req, callback) {
                 else
                     return userNotFound;
             }, function (err) {
-                return { error: err }
+                return { error: err };
             });
         } else if (obj.type === 'get') {
             db.get(obj.user, function (err, response) {
@@ -59,7 +60,7 @@ function handlePost(req, callback) {
                     return userNotFound;
                 }
             }, function (err) {
-                return { error: err }
+                return { error: err };
             });
         } else if (obj.type === 'set') {
             db.get(obj.user, function (err, response) {
@@ -83,7 +84,7 @@ function handlePost(req, callback) {
                     db.put(files);
                 }
             }, function (err) {
-                return { error: err }
+                return { error: err };
             });
         } else {
             return typeNotRecognized;
