@@ -26,7 +26,7 @@ function handlePost(req, callback) {
 
     function handleError(err) {
         console.log('ERROR!!!!!!: ' + JSON.stringify(err));
-        if (err) return { error: JSON.stringify(err); };
+        if (err) return { error: JSON.stringify(err) };
     }
 
     function handleEnd() {
