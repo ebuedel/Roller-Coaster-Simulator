@@ -1,48 +1,60 @@
 <!doctype html>
 
-<title>String Server</title>
+<title>Test</title>
 
-<h1>String Server</h1>
+<style>
 
-<label>User: </label><input id="user"></input>
-<label>Key: </label><input id="key"></input>
-<select id="select">
-    <option value="list">list</option>
-    <option value="get">get</option>
-    <option value="set" selected>set</option>
-</select>
-<button>Submit</button>
-<br><br>
+    .hide { display: none }
 
-<textarea rows="8" cols="80" id="value"></textarea>
+</style>
 
-<h2>Log</h2>
-<pre id="log"></pre>
+<div id="message"></div>
+<a class="hide" id="sign-out">Sign out</a>
 
 <script>
-    var url = 'roller-coaster-simulator.mybluemix.net';
-    var button = document.getElementsByTagName('button')[0];
 
-    var type = document.getElementById('select');
-    var user = document.getElementById('user');
-    var key = document.getElementById('key');
-    var value = document.getElementById('value');
-    var log = document.getElementById('log');
-    
-    button.addEventListener('click', function () { 
-        var request = new XMLHttpRequest();
-        request.addEventListener('readystatechange', function () {
-            if (request.readyState === 4)
-                log.textContent += request.response + '\n';
-        });
+function onClientLoad() {
+    var goog = {
+        apiKey: "AIzaSyBP5AxfuHR3W-zlJRe_DGpRtgv0nL13cxs",
+        clientId: "216008935087-f9vlpnbj9ilh4cevllsuc57d8brnhou9.apps.googleusercontent.com",
+        authScopes: [ "https://www.googleapis.com/auth/plus.login" ]
+        //sTJ_sX3eWFF8k46YE0IVeDEf
+    };
 
-        request.open('POST', url, true);
-        request.setRequestHeader('Content-Type', 'application/json');
-        request.send(JSON.stringify({
-            type: type.value,
-            user: user.value,
-            key: key.value,
-            value: value.value
-        }));
-    });
+    function checkAuth(immediate) {
+        function handleAuthorizeRequest(result) {
+            var message = $I("message");
+
+            if (result && !result.error) {
+                var signOutButton = document.getElementById("sign-out");
+                signOutButton.classList.remove("hide");
+                signOutButton.addEventListener("click", function () {
+                    gapi.auth.signOut();
+                });
+            } else {
+                document.getElementById("message").innerHTML = "Please sign in to see upcoming rides:<br>" +
+                    "<a class=gplus-sign-in id=gplus-sign-in>Sign in with Google</a>";
+
+                var signInButton = document.getElementById("gplus-sign-in");
+                signInButton.addEventListener("click", function () {
+                    checkAuth(false);
+                });
+            }
+        }
+
+        gapi.auth.authorize({
+            "client_id": goog.clientId,
+            scope: goog.authScopes,
+            immediate: immediate
+        }, handleAuthorizeRequest);
+    }
+
+    gapi.client.setApiKey(goog.apiKey);
+    gapi.client.load("calendar", "v3");
+
+    checkAuth(true);
+}
+
 </script>
+
+<script src="https://apis.google.com/js/client.js?onload=onClientLoad"></script>
