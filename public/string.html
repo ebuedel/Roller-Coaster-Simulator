@@ -1,0 +1,48 @@
+<!doctype html>
+
+<title>String Server</title>
+
+<h1>String Server</h1>
+
+<label>User: </label><input id="user"></input>
+<label>Key: </label><input id="key"></input>
+<select id="select">
+    <option value="list">list</option>
+    <option value="get">get</option>
+    <option value="set" selected>set</option>
+</select>
+<button>Submit</button>
+<br><br>
+
+<textarea rows="8" cols="80" id="value"></textarea>
+
+<h2>Log</h2>
+<pre id="log"></pre>
+
+<script>
+    var url = 'roller-coaster-simulator.mybluemix.net';
+    var button = document.getElementsByTagName('button')[0];
+
+    var type = document.getElementById('select');
+    var user = document.getElementById('user');
+    var key = document.getElementById('key');
+    var value = document.getElementById('value');
+    var log = document.getElementById('log');
+    
+    button.addEventListener('click', function () { 
+        var request = new XMLHttpRequest();
+        request.addEventListener('readystatechange', function () {
+            if (request.readyState === 4)
+                log.textContent += request.response + '\n';
+        });
+
+        request.open('POST', url, true);
+        request.setRequestHeader('Content-Type', 'application/json');
+        request.send(JSON.stringify({
+            type: type.value,
+            user: user.value,
+            key: key.value,
+            value: value.value
+        }));
+    });
+</script>
