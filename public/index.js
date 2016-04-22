@@ -1,4 +1,3 @@
-<script>
   // This is called with the results from from FB.getLoginStatus().
   function statusChangeCallback(response) {
     console.log('statusChangeCallback');
@@ -206,6 +205,3 @@ window.fbAsyncInit = function() {
 
     init();
 }());
-
-</script>
-
