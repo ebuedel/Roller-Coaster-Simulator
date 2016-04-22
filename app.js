@@ -142,44 +142,45 @@ function handleRequest(request, response) {
 
     var handlers = {
         GET: function (request, response) {
-if (request.url === '/') {
-    http.get('http://rawgit.com/roth28/roller-coaster-simulator/master/index.html', function (httpresponse) {
-    var body = '';
-    httpresponse.setEncoding('utf8');
-    httpresponse.on('data', function(d) {
-        body += d;
-    });
-
-        httpresponse.on('end', function() {
-            response.writeHead(404, {'Content-Type': 'text/html'});
-            response.write(body);
-            response.end();
-        });
-    });
-    return;
-}
-            
             var filename = request.url;
             if (filename == '/') filename = '/index.html';
-            filename = './public' + filename;
-            var stats;
+            //filename = './public' + filename;
 
-            try {
-                stats = fs.lstatSync(filename);
-            } catch (error) {
-                response.writeHead(404, {'Content-Type': 'text/plain'});
-                response.write('404 Not Found\n');
-                response.end();
-                return;
-            }
+            //var stats;
 
-            if (stats.isFile()) {
-                var type = mimeTypes[filename.split(".").pop()];
-                response.writeHead(200, {'Content-Type': type} );
-                fs.readFile(filename, function (error, data) {
-                    response.end(data);
+            //try {
+            //    stats = fs.lstatSync(filename);
+            //} catch (error) {
+            //    response.writeHead(404, {'Content-Type': 'text/plain'});
+            //    response.write('404 Not Found\n');
+            //    response.end();
+            //    return;
+            //}
+
+            //if (stats.isFile()) {
+                //var type = mimeTypes[filename.split(".").pop()];
+                //response.writeHead(200, {'Content-Type': type} );
+                //fs.readFile(filename, function (error, data) {
+                //    response.end(data);
+                //});
+            //}
+            filename ='http://rawgit.com/roth28/roller-coaster-simulator/master' + filename; 
+            http.get(filename, function (httpresponse) {
+                var body = '';
+                var code = httpresponse.headers[0];
+                var type = httpresponse.headers['content-type'];
+
+                httpresponse.setEncoding('utf8');
+                httpresponse.on('data', function (data) {
+                    body += data;
                 });
-            }
+
+                httpresponse.on('end', function() {
+                    response.writeHead(httpresponse.statusCode, {'Content-Type': type});
+                    response.write(body);
+                    response.end();
+                });
+            });
         },
 
         POST: function (request, response) {
