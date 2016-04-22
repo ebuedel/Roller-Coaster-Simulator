@@ -1,0 +1,111 @@
+<!doctype html>
+
+<style>
+    body { font-family: 'Lucida Grande', sans-serif; }
+    ul { list-style: none; max-height: 10em; }
+    a { color: blue; text-decoration: underline; cursor: pointer;}
+</style>
+
+<p>Open a project or create a new one.</p>
+<ul id="project-list"></ul>
+<button id="create-new-button">Create New</button>
+
+<script>
+
+(function () {
+    'use strict';
+
+    var url = 'localhost'; // 'roller-coaster-simulator.mybluemix.net'
+    var user = 'TestUser';
+    var projectList;
+
+    function post(object, callback) {
+        var request = new XMLHttpRequest();
+
+        request.addEventListener('readystatechange', function () {
+            if (request.readyState === 4)
+                callback(JSON.parse(request.response));
+        });
+
+        request.open('POST', url, true);
+        request.setRequestHeader('Content-Type', 'application/json');
+        request.send(JSON.stringify(object));
+    }
+
+    function refresh() {
+        var ul = document.getElementById('project-list');
+
+        while (ul.firstChild)
+            ul.removeChild(ul.firstChild);
+
+        post({ type: 'list', user: user }, function (response) {
+            projectList = response.value || [];
+            var length = projectList.length;
+
+            if (length) {
+                for (var i = 0; i < length; i++) {
+                    var li = document.createElement('li');
+                    var a = document.createElement('a');
+                    a.textContent = projectList[i];
+                    a.addEventListener('click', function () {
+                        post({ type: 'get', user: user, key: this.textContent }, function (response) {
+                            if (!response.error) {
+                                alert('Project Data:' + JSON.stringify(response.value));
+                            } else {
+                                alert(response.error);
+                            }
+                        });
+                    });
+                    li.appendChild(a);
+                    li.appendChild(document.createTextNode(' ('));
+                    a = document.createElement('a');
+                    a.textContent = 'delete';
+                    a.addEventListener('click', function () {
+                        if (confirm('Are you sure?')) {
+                            post({ type: 'set', user: user, key: this.previousSibling.previousSibling.textContent }, function (response) {
+                                refresh();
+                            });
+                        }
+                    });
+                    li.appendChild(a);
+                    li.appendChild(document.createTextNode(')'));
+                    ul.appendChild(li);
+                }
+            } else {
+                var li = document.createElement('li');
+                li.textContent = 'You have not created any projects yet :(';
+                ul.appendChild(li);
+            }
+        });
+    }
+
+    function init() {  
+        refresh();
+
+        var createNewButton = document.getElementById('create-new-button');
+
+        createNewButton.addEventListener('click', function () {
+            var n = 1;
+            while (projectList.indexOf('Project' + n) !== -1) n++;
+            var key = prompt('Project name:', 'Project' + n);
+            var request = {
+                type: 'set',
+                user: user,
+                key: key,
+                value: JSON.stringify({ dateCreated: Date.now() })
+            };
+
+            post(request, function (response) {
+                if (!response.error) {
+                    refresh();
+                } else {
+                    alert(response.error);
+                }
+            });
+        }); 
+    }
+
+    init();
+}());
+
+</script>

@@ -1,6 +1,9 @@
 'use strict';
 
 var fs = require('fs');
+var http = require('http');
+var pouchdb = require('pouchdb');
+
 process.env.VCAP_SERVICES = JSON.stringify({
     "cloudantNoSQLDB": [
       {
@@ -17,8 +20,6 @@ process.env.VCAP_SERVICES = JSON.stringify({
       }
    ]
 });
-var http = require('http');
-var pouchdb = require('pouchdb');
 
 function isString(x) {
     return typeof x === 'string';
@@ -58,25 +59,39 @@ function handlePostRequest(requestObject, callback, handleError) {
 
         set: function (error, userData) {
             if (!isString(key) || !key.length) {
+                console.log('1');
                 callback(keyNotSpecified);
+                return;
             } else if (!isUndefined(userData) && key in userData.pairs) {
+                console.log('2');
                 if (value.length) {
+                    console.log('3');
                     userData.pairs[key] = value;
                     db.put(userData);
                 } else {
+                    console.log('4');
                     delete userData.pairs[key];
-                    if (Object.keys(userData.pairs).length)
+                    if (Object.keys(userData.pairs).length) {
+                        console.log('5');
                         db.put(userData);
-                    else
+                    } else {
+                        console.log('6');
                         db.remove(userData, handleError);
+                    }
                 }
-                callback({});
-            } else {
+            } else if (value.length) {
+                console.log('7');
                 var pairs = {};
                 pairs[key] = value;
-                db.put({ _id: user, pairs: pairs });
-                callback({});
+                console.log('_id: ' + user);
+                console.log('pairs[key]: ' + pairs[key]);
+                db.put({ _id: user, pairs: pairs }, function (err, response) {
+                    console.log(err || response);
+                });
             }
+            console.log('8');
+
+            callback({});
         }
     }
 
@@ -104,6 +119,10 @@ function handleRequest(request, response) {
         GET: function (request, response) {
             if (request.url === '/' || request.url === '/index.html') {
                 fs.readFile('./public/index.html', function (err, data) {
+                    response.end(data);
+                });
+            } else if (request.url === '/test.html') {
+                fs.readFile('./public/test.html', function (err, data) {
                     response.end(data);
                 });
             } else {
