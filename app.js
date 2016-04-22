@@ -3,6 +3,7 @@
 var fs = require('fs');
 var http = require('http');
 var pouchdb = require('pouchdb');
+pouchdb.plugin(require('pouchdb-upsert'));
 
 process.env.VCAP_SERVICES = JSON.stringify({
     "cloudantNoSQLDB": [
@@ -21,20 +22,35 @@ process.env.VCAP_SERVICES = JSON.stringify({
    ]
 });
 
-function isString(x) {
-    return typeof x === 'string';
-}
+function handlePostRequest(requestObject, callback) {
+    function isString(x) { return typeof x === 'string'; }
 
-function isUndefined(x) {
-    return typeof x === 'undefined';
-}
+    function isUndefined(x) { return typeof x === 'undefined'; }
 
-function handlePostRequest(requestObject, callback, handleError) {
-    var typeNotRecognized = { error: 'Type not recognized.' };
-    var userNotSpecified = { error: 'User not specified.' };
-    var userNotFound = { error: 'User not found.' };
-    var keyNotSpecified = { error: 'Key not specified.' };
-    var keyNotFound = { error: 'Key not found.' };
+    function handler(error, response) {
+        if (error) {
+            console.log(error);
+            //callback(error);
+        } else {
+            //callback({});
+        }
+    }
+
+    function update(data) {
+        if (isUndefined(data.revisions))
+            data.revisions = 0;
+        data.revisions++;
+
+        return function () {
+            return data;
+        }
+    }
+
+    var typeNotRecognized = { error: 'Invalid Request: Type not recognized.' };
+    var userNotSpecified = { error: 'Invalid Request: User not specified.' };
+    var userNotFound = { error: 'Invalid Request: User not found.' };
+    var keyNotSpecified = { error: 'Invalid Request: Key not specified.' };
+    var keyNotFound = { error: 'Invalid Request: Key not found.' };
 
     var type = requestObject.type;
     var user = requestObject.user;
@@ -43,10 +59,12 @@ function handlePostRequest(requestObject, callback, handleError) {
 
     var handlers = {
         list: function (error, userData) {
+            if (error) console.log(error);
             return callback(!isUndefined(userData) ? { value: Object.keys(userData.pairs || {}) } : userNotFound);
         },
 
         get: function (error, userData) {
+            if (error) console.log(error);
             if (isUndefined(userData)) {
                 callback(userNotFound);
             } else if (!isString(key) || !key.length) {
@@ -58,38 +76,38 @@ function handlePostRequest(requestObject, callback, handleError) {
         },
 
         set: function (error, userData) {
+            if (error) console.log(error);
             if (!isString(key) || !key.length) {
-                console.log('1');
                 callback(keyNotSpecified);
                 return;
-            } else if (!isUndefined(userData) && key in userData.pairs) {
-                console.log('2');
-                if (value.length) {
-                    console.log('3');
-                    userData.pairs[key] = value;
-                    db.put(userData);
-                } else {
-                    console.log('4');
-                    delete userData.pairs[key];
-                    if (Object.keys(userData.pairs).length) {
-                        console.log('5');
-                        db.put(userData);
-                    } else {
-                        console.log('6');
-                        db.remove(userData, handleError);
+            } else if (!isUndefined(userData)) {
+                delete userData._rev;
+
+                if (key in userData.pairs) {
+                    if (!isUndefined(value) && value.length) { // Replace the existing value with a new value.
+                        userData.pairs[key] = value;
+                        db.upsert(userData._id, update(userData), handler);
+                    } else { // Delete the existing value.
+                        delete userData.pairs[key];
+                        if (Object.keys(userData.pairs).length) { // Remove key.
+                            db.upsert(userData._id, update(userData), handler);
+                        } else { // Delete the user if there are no remaining keys.
+                            db.upsert(userData._id, update(userData), handler);
+
+                            // This doesn't seem to work. Don't know why.
+                            //db.remove(userData, handler);
+                        }
                     }
+                } else if (!isUndefined(value) && value.length) { // Create a new key-value pair.
+                    userData.pairs[key] = value;
+                    db.upsert(user, update(userData), handler);
                 }
-            } else if (value.length) {
-                console.log('7');
+            } else if (!isUndefined(value) && value.length) { // Create a new user with one key-value pair.
                 var pairs = {};
                 pairs[key] = value;
-                console.log('_id: ' + user);
-                console.log('pairs[key]: ' + pairs[key]);
-                db.put({ _id: user, pairs: pairs }, function (err, response) {
-                    console.log(err || response);
-                });
+                var userData = { _id: user, pairs: pairs };
+                db.upsert(user, update(userData), handler);
             }
-            console.log('8');
 
             callback({});
         }
@@ -97,7 +115,7 @@ function handlePostRequest(requestObject, callback, handleError) {
 
     var handler = handlers[type];
 
-    if (!handler) {
+    if (isUndefined(handler)) {
         callback(typeNotRecognized);
     } else if (!isString(user) || !user.length) {
         callback(userNotSpecified);
@@ -110,25 +128,40 @@ function handlePostRequest(requestObject, callback, handleError) {
 
         db.replicate.to(remote, opts);
         db.replicate.from(remote, opts);
-        db.get(user, handler, handleError);            
+        db.get(user, handler, handler);         
     }
 }
 
 function handleRequest(request, response) {
+    var maxPostSize = 1e5;
+    var mimeTypes = {
+        html: 'text/html',
+        js: 'text/javascript',
+        css: 'text/css'
+    };
+
     var handlers = {
         GET: function (request, response) {
-            if (request.url === '/' || request.url === '/index.html') {
-                fs.readFile('./public/index.html', function (err, data) {
-                    response.end(data);
-                });
-            } else if (request.url === '/test.html') {
-                fs.readFile('./public/test.html', function (err, data) {
-                    response.end(data);
-                });
-            } else {
+            var filename = request.url;
+            if (filename == '/') filename = '/index.html';
+            filename = './public' + filename;
+            var stats;
+
+            try {
+                stats = fs.lstatSync(filename);
+            } catch (error) {
                 response.writeHead(404, {'Content-Type': 'text/plain'});
-                response.write('404 - File not Found');
+                response.write('404 Not Found\n');
                 response.end();
+                return;
+            }
+
+            if (stats.isFile()) {
+                var type = mimeTypes[filename.split(".").pop()];
+                response.writeHead(200, {'Content-Type': type} );
+                fs.readFile(filename, function (error, data) {
+                    response.end(data);
+                });
             }
         },
 
@@ -137,31 +170,27 @@ function handleRequest(request, response) {
 
             request.on('data', function (data) {
                 body += data;
-                if (body.length > 1e5) {
+                if (body.length > maxPostSize) {
                     request.connection.destroy();
                 }
             });
 
             request.on('end', function () {
-                function handleError(error) {
-                    console.log(error);
-                }
-
                 try {
                     var obj = JSON.parse(body);
                     handlePostRequest(obj, function (responseObj) {
                         response.writeHead(200, {'Content-Type': 'application/json'});
                         response.write(JSON.stringify(responseObj));
                         response.end();
-                    }, handleError);
-                } catch (err) {
-                    handleError(err);
+                    });
+                } catch (error) {
+                    console.log(error);
                 }
             });
         }
     };
 
-    return handlers[request.method](request, response);
+    handlers[request.method](request, response);
 }
 
 (function () {
