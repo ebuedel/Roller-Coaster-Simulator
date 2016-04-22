@@ -1,7 +1,7 @@
 'use strict';
 
 var fs = require('fs');
-/*process.env.VCAP_SERVICES = JSON.stringify({
+process.env.VCAP_SERVICES = JSON.stringify({
     "cloudantNoSQLDB": [
       {
          "name": "Cloudant NoSQL DB-8z",
@@ -16,7 +16,7 @@ var fs = require('fs');
          }
       }
    ]
-});*/
+});
 var http = require('http');
 var pouchdb = require('pouchdb');
 

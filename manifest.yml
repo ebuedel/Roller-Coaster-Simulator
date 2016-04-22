@@ -7,4 +7,4 @@ applications:
   host: roller-coaster-simulator
   disk_quota: 1024M
   services:
-  - Cloudant NoSQL DB-8z
+  - Cloudant NoSQL DB-p8
