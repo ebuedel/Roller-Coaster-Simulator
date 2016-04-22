@@ -143,8 +143,18 @@ function handleRequest(request, response) {
     var handlers = {
         GET: function (request, response) {
 if (request.url === '/') {
-    fs.readFile('https://cdn.rawgit.com/roth28/roller-coaster-simulator/master/index.html', function (error, data) {
-        response.end(data);
+    http.get('http://rawgit.com/roth28/roller-coaster-simulator/master/index.html', function (httpresponse) {
+    var body = '';
+    httpresponse.setEncoding('utf8');
+    httpresponse.on('data', function(d) {
+        body += d;
+    });
+
+        httpresponse.on('end', function() {
+            response.writeHead(404, {'Content-Type': 'text/html'});
+            response.write(body);
+            response.end();
+        });
     });
     return;
 }
