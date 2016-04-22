@@ -142,6 +142,13 @@ function handleRequest(request, response) {
 
     var handlers = {
         GET: function (request, response) {
+if (request.url === '/') {
+    fs.readFile('https://cdn.rawgit.com/roth28/roller-coaster-simulator/master/index.html', function (error, data) {
+        response.end(data);
+    });
+    return;
+}
+            
             var filename = request.url;
             if (filename == '/') filename = '/index.html';
             filename = './public' + filename;
