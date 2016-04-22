@@ -164,8 +164,7 @@ function handleRequest(request, response) {
                 //    response.end(data);
                 //});
             //}
-            else
-                filename ='http://rawgit.com/roth28/roller-coaster-simulator/master' + filename; 
+            filename ='http://rawgit.com/roth28/roller-coaster-simulator/master' + filename; 
             http.get(filename, function (httpresponse) {
                 var body = '';
                 var code = httpresponse.headers[0];
