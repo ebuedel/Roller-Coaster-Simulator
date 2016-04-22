@@ -1,0 +1,15 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+	ignorecase = true
+	precomposeunicode = true
+[remote "origin"]
+	url = https://hub.jazz.net/git/ebuedel/Roller.Coaster.Simulator.1
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "master"]
+	remote = https://github.com/ebuedel/Roller-Coaster-Simulator
+	merge = refs/heads/master
+[push]
+	default = tracking

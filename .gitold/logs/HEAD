@@ -1,0 +1,96 @@
+0000000000000000000000000000000000000000 1acbdf8f94428322090ca989e01fc491c094da08 Eric Buedel <ebuedel@purdue.edu> 1461038060 -0400	clone: from https://hub.jazz.net/git/ebuedel/Roller.Coaster.Simulator.1
+1acbdf8f94428322090ca989e01fc491c094da08 c0ed64c855d1562d818009a44c8d9132f78fe17c Eric Buedel <ebuedel@purdue.edu> 1461038203 -0400	commit: did stuff
+c0ed64c855d1562d818009a44c8d9132f78fe17c 38f523123b12fd16eac73534562545d762ee9abb Eric Buedel <ebuedel@purdue.edu> 1461038367 -0400	commit: added cradle module
+38f523123b12fd16eac73534562545d762ee9abb fe9be5dfc227b9ec96d655d95eb7e250e71de1c0 Eric Buedel <ebuedel@purdue.edu> 1461038563 -0400	commit: trying cradle again
+fe9be5dfc227b9ec96d655d95eb7e250e71de1c0 6e2365d3806e384d1e849319662590062f1ab93c Eric Buedel <ebuedel@purdue.edu> 1461041071 -0400	commit: try this again
+6e2365d3806e384d1e849319662590062f1ab93c aa1acd04db490e8bbfbd5356611906ff1e7427c1 Eric Buedel <ebuedel@purdue.edu> 1461048059 -0400	commit: testing database
+aa1acd04db490e8bbfbd5356611906ff1e7427c1 973615817d693ddbaf08f2afe17c7740a072c705 Eric Buedel <ebuedel@purdue.edu> 1461048942 -0400	commit: testing
+973615817d693ddbaf08f2afe17c7740a072c705 345910e5b610e7ecc93fddcb04af82e227300e0c Eric Buedel <ebuedel@purdue.edu> 1461049189 -0400	commit: fixed curly
+345910e5b610e7ecc93fddcb04af82e227300e0c c3d5cca7f2981233c6a63ade89dbdccf3221ae5e Eric Buedel <ebuedel@purdue.edu> 1461050339 -0400	commit: server stuff
+c3d5cca7f2981233c6a63ade89dbdccf3221ae5e b3abfabc5bf4026ed7c10e58b02fde4a7ee8f334 Eric Buedel <ebuedel@purdue.edu> 1461084524 -0400	commit: printing connection
+b3abfabc5bf4026ed7c10e58b02fde4a7ee8f334 2abf3d87cfddc690f6f5af329d94c3daa8355a75 Eric Buedel <ebuedel@purdue.edu> 1461085200 -0400	commit: hostname testing
+2abf3d87cfddc690f6f5af329d94c3daa8355a75 4c5f36b62b53bfe5fd68cbb9bf83c4e8e00f1648 Eric Buedel <ebuedel@purdue.edu> 1461085353 -0400	commit: hostname testing
+4c5f36b62b53bfe5fd68cbb9bf83c4e8e00f1648 ad77e5199376f7fcfbfc29d3a874bccdcb1fd2a0 Eric Buedel <ebuedel@purdue.edu> 1461085541 -0400	commit: hostname testing
+ad77e5199376f7fcfbfc29d3a874bccdcb1fd2a0 6e084138f517671643359c54ba8c20f624f799f0 Eric Buedel <ebuedel@purdue.edu> 1461085857 -0400	commit: hostname testing
+6e084138f517671643359c54ba8c20f624f799f0 8ad94d72549759de7d415ed448f161d03a4cde3a Eric Buedel <ebuedel@purdue.edu> 1461086119 -0400	commit: hostname testing
+8ad94d72549759de7d415ed448f161d03a4cde3a b1558956d747e2f540ddc990878cc11239587e25 Eric Buedel <ebuedel@purdue.edu> 1461086420 -0400	commit: hostname testing
+b1558956d747e2f540ddc990878cc11239587e25 532edd064c596187b4225df4a6552feff22156fa Eric Buedel <ebuedel@purdue.edu> 1461086832 -0400	commit: hostname testing
+532edd064c596187b4225df4a6552feff22156fa 353e396ccb3d8fbdaf699089156cdf7c3a2f5a4f Eric Buedel <ebuedel@purdue.edu> 1461094508 -0400	commit: still testing
+353e396ccb3d8fbdaf699089156cdf7c3a2f5a4f a612f46158c867a152d5fc25ecb0b5cf9f6ce04d Eric Buedel <ebuedel@purdue.edu> 1461094857 -0400	commit: still testing
+a612f46158c867a152d5fc25ecb0b5cf9f6ce04d d79fb7ce1517e721e3764468633925cfcc7d93f9 Eric Buedel <ebuedel@purdue.edu> 1461095152 -0400	commit: still testing
+d79fb7ce1517e721e3764468633925cfcc7d93f9 1e5dc247b1eada31b04ecf15484a998198a71a7d Eric Buedel <ebuedel@purdue.edu> 1461095319 -0400	commit: still testing
+1e5dc247b1eada31b04ecf15484a998198a71a7d db427c7c3297cad6bfe64f7ef32d137327247f42 Eric Buedel <ebuedel@purdue.edu> 1461095472 -0400	commit: still testing
+db427c7c3297cad6bfe64f7ef32d137327247f42 cd2a9df918bc15c78f8c2177f6c82e72bdaf9184 Eric Buedel <ebuedel@purdue.edu> 1461095701 -0400	commit: idk
+cd2a9df918bc15c78f8c2177f6c82e72bdaf9184 df2e07a2c2279751243cb68bc7714c37f6124b49 Eric Buedel <ebuedel@purdue.edu> 1461096350 -0400	commit: idk
+df2e07a2c2279751243cb68bc7714c37f6124b49 de3a34e2b0b2b15c702a622639810ea6ea350c8c Eric Buedel <ebuedel@purdue.edu> 1461096376 -0400	commit: print
+de3a34e2b0b2b15c702a622639810ea6ea350c8c 306347d9132a137532d658fd2c52aecc278558fc Eric Buedel <ebuedel@purdue.edu> 1461096890 -0400	commit: trying stuff
+306347d9132a137532d658fd2c52aecc278558fc 98f48157d7250cdd7509c6290e91b9252b87d614 Eric Buedel <ebuedel@purdue.edu> 1461097348 -0400	commit: trying stuff
+98f48157d7250cdd7509c6290e91b9252b87d614 f38544d26f18ba5f03e89f33226908b499e26aa5 Eric Buedel <ebuedel@purdue.edu> 1461097616 -0400	commit: trying stuff again
+f38544d26f18ba5f03e89f33226908b499e26aa5 4931d548c8fb0ea113c41b16f5c79e64a0292892 Eric Buedel <ebuedel@purdue.edu> 1461098016 -0400	commit: trying stuff again
+4931d548c8fb0ea113c41b16f5c79e64a0292892 b38250e6248f0969086010a0a8faf81060b51e0b Eric Buedel <ebuedel@purdue.edu> 1461098634 -0400	commit: trying stuff again
+b38250e6248f0969086010a0a8faf81060b51e0b 1de039991eedfdc10ab7c04706fd9426324a3032 Eric Buedel <ebuedel@purdue.edu> 1461098906 -0400	commit: trying stuff again
+1de039991eedfdc10ab7c04706fd9426324a3032 c7b01359c4ca5206a5575ddba91ac81c86a5c6e3 Eric Buedel <ebuedel@purdue.edu> 1461099137 -0400	commit: trying stuff again
+c7b01359c4ca5206a5575ddba91ac81c86a5c6e3 d1359d476fbb236e3ce4b10a58a5f0328ca1c322 Eric Buedel <ebuedel@purdue.edu> 1461099245 -0400	commit: trying stuff again
+d1359d476fbb236e3ce4b10a58a5f0328ca1c322 6e72a443092431c5b7c00747fbdfc26a01ea2285 Eric Buedel <ebuedel@purdue.edu> 1461099754 -0400	commit: trying stuff again
+6e72a443092431c5b7c00747fbdfc26a01ea2285 d9e5e7ac31b90abc81ef3ea0716be1197b70efbe Eric Buedel <ebuedel@purdue.edu> 1461100363 -0400	commit: new stuff
+d9e5e7ac31b90abc81ef3ea0716be1197b70efbe 0f1b4daabd6d3f81d540ab4b8403fe4f9dbfab8f Eric Buedel <ebuedel@purdue.edu> 1461100454 -0400	commit: new stuff
+0f1b4daabd6d3f81d540ab4b8403fe4f9dbfab8f 9f7fcbeecbd1da084896941cb783e6706371ffc9 Eric Buedel <ebuedel@purdue.edu> 1461100740 -0400	commit: new stuff
+9f7fcbeecbd1da084896941cb783e6706371ffc9 c77310b0429448ec827e8661721b47bbd5e8a44a Eric Buedel <ebuedel@purdue.edu> 1461118932 -0400	commit: poo
+c77310b0429448ec827e8661721b47bbd5e8a44a 02d4d55b456bde4542274a8a19576780677fd539 Eric Buedel <ebuedel@purdue.edu> 1461119142 -0400	commit: poo
+02d4d55b456bde4542274a8a19576780677fd539 c5957026bddb3f48902fd034b294117e9a452482 Eric Buedel <ebuedel@purdue.edu> 1461119371 -0400	commit: poo
+c5957026bddb3f48902fd034b294117e9a452482 35f550f854b8211a39dba878ed29e6dc199dd41e Eric Buedel <ebuedel@purdue.edu> 1461119701 -0400	commit: poo
+35f550f854b8211a39dba878ed29e6dc199dd41e ae24579f6322a9a2bb79f236b7992a3de0059f54 Eric Buedel <ebuedel@purdue.edu> 1461120311 -0400	commit: poo
+ae24579f6322a9a2bb79f236b7992a3de0059f54 0e5bf9c3935e224b9dc41df359ed624939e7263c Eric Buedel <ebuedel@purdue.edu> 1461121383 -0400	commit: poo
+0e5bf9c3935e224b9dc41df359ed624939e7263c a6f0b44967f9a14d424958c773b68c17cc7f0136 Eric Buedel <ebuedel@purdue.edu> 1461121439 -0400	commit: poo
+a6f0b44967f9a14d424958c773b68c17cc7f0136 3d055adf271000e47be3a873e554fd4e873ee96c Eric Buedel <ebuedel@purdue.edu> 1461121827 -0400	commit: poo
+3d055adf271000e47be3a873e554fd4e873ee96c b7f05147c532bf233c201a077c521ea8dda2a91c Eric Buedel <ebuedel@purdue.edu> 1461122006 -0400	commit: poo
+b7f05147c532bf233c201a077c521ea8dda2a91c 3962f7db923a60f4aa2569a4e836d6fa2537857a Eric Buedel <ebuedel@purdue.edu> 1461123772 -0400	commit: poo
+3962f7db923a60f4aa2569a4e836d6fa2537857a d536050451080e08a7c13f878354eee724370b69 Eric Buedel <ebuedel@purdue.edu> 1461123831 -0400	commit: poo
+d536050451080e08a7c13f878354eee724370b69 83d71d59d0988ed259c67873bb9f8f97ad37e84a Eric Buedel <ebuedel@purdue.edu> 1461124301 -0400	commit: Michael is a boss
+83d71d59d0988ed259c67873bb9f8f97ad37e84a a100d6f295eda477346a67dbe83389ca0533b299 Eric Buedel <ebuedel@purdue.edu> 1461126292 -0400	commit: poop
+a100d6f295eda477346a67dbe83389ca0533b299 543e736285c9c84ca1b81b9a1934e930bced2ebf Eric Buedel <ebuedel@purdue.edu> 1461126838 -0400	commit: we good
+543e736285c9c84ca1b81b9a1934e930bced2ebf bfc78883232b5325f3f2a2bdf749b86102561fdb Eric Buedel <ebuedel@purdue.edu> 1461168334 -0400	commit: test
+bfc78883232b5325f3f2a2bdf749b86102561fdb 60bf98b7bb206d5099cf0aa77489c094ae4811f8 Eric Buedel <ebuedel@purdue.edu> 1461168939 -0400	commit: parenthesis
+60bf98b7bb206d5099cf0aa77489c094ae4811f8 c47f1af511221a8693b9373719bcbabae4250b4c Eric Buedel <ebuedel@purdue.edu> 1461177297 -0400	commit: lol
+c47f1af511221a8693b9373719bcbabae4250b4c 0cf7814b3015d4796cbbb7c8c07c95f6c3796471 Eric Buedel <ebuedel@purdue.edu> 1461177591 -0400	commit: lol
+0cf7814b3015d4796cbbb7c8c07c95f6c3796471 ac8ce1bcabcf7033c5962b495e7aed5885ffbbd3 Eric Buedel <ebuedel@purdue.edu> 1461178142 -0400	commit: lol
+ac8ce1bcabcf7033c5962b495e7aed5885ffbbd3 c1ecdd2db8543465fd01c54292161841cfd66378 Eric Buedel <ebuedel@purdue.edu> 1461178886 -0400	commit: igm
+c1ecdd2db8543465fd01c54292161841cfd66378 fb83526e8017224fa3376eb0744d962dd04c1a3b Eric Buedel <ebuedel@purdue.edu> 1461179589 -0400	commit: try this
+fb83526e8017224fa3376eb0744d962dd04c1a3b 50ce4c3ba3e7c9dff6a4c247b616a556f7c3a91f Eric Buedel <ebuedel@purdue.edu> 1461196041 -0400	commit: try this
+50ce4c3ba3e7c9dff6a4c247b616a556f7c3a91f f53c28781cc4abf7707ceeb79f306be46deee255 Eric Buedel <ebuedel@purdue.edu> 1461197343 -0400	commit: callbacks are different
+f53c28781cc4abf7707ceeb79f306be46deee255 5e2bafc5c86479e416a7cc2def59f7f0bb3e3241 Eric Buedel <ebuedel@purdue.edu> 1461197757 -0400	commit: rerun that
+5e2bafc5c86479e416a7cc2def59f7f0bb3e3241 80bd85c41f0ac468873df3d86873cbe54c46fc5f Eric Buedel <ebuedel@purdue.edu> 1461198136 -0400	commit: wont work
+80bd85c41f0ac468873df3d86873cbe54c46fc5f 438026be77856d27495aa8feddf8f900f994c65e Eric Buedel <ebuedel@purdue.edu> 1461199536 -0400	commit: wont work
+438026be77856d27495aa8feddf8f900f994c65e 384325b5c4378e435d7f67ee22d438a865f491ad Eric Buedel <ebuedel@purdue.edu> 1461200390 -0400	commit: sniff
+384325b5c4378e435d7f67ee22d438a865f491ad 6f59d6670b0c732b2af37f5eba50813e9e91b562 Eric Buedel <ebuedel@purdue.edu> 1461200626 -0400	commit: damn curlys
+6f59d6670b0c732b2af37f5eba50813e9e91b562 d1310389f724140aa77f4502f746f1374daafbca Eric Buedel <ebuedel@purdue.edu> 1461201457 -0400	commit: bluemix hates us
+d1310389f724140aa77f4502f746f1374daafbca 8ec762407901f2f50aa4713a46be6f09c3a03720 Eric Buedel <ebuedel@purdue.edu> 1461201658 -0400	pull https://hub.jazz.net/git/ebuedel/Roller.Coaster.Simulator: Merge made by the 'recursive' strategy.
+8ec762407901f2f50aa4713a46be6f09c3a03720 d8cbbc4994354495ee555002505052d9ad5b2d03 Eric Buedel <ebuedel@purdue.edu> 1461202785 -0400	commit: alright let's try thus
+d8cbbc4994354495ee555002505052d9ad5b2d03 935f725bd306761493d8ccea0c72a2bb40852de1 Eric Buedel <ebuedel@purdue.edu> 1461203469 -0400	commit: bluemix is shoomix
+935f725bd306761493d8ccea0c72a2bb40852de1 319d80ae7523805104c507560765f2770e8d7b9f Eric Buedel <ebuedel@purdue.edu> 1461204089 -0400	commit: manifest
+319d80ae7523805104c507560765f2770e8d7b9f 5305931de881dde3a32253b4ee30fcab833fec53 Eric Buedel <ebuedel@purdue.edu> 1461204571 -0400	commit: idk
+5305931de881dde3a32253b4ee30fcab833fec53 6f64f5efa1b07149aa4309f830377a3c9cfd4d66 Eric Buedel <ebuedel@purdue.edu> 1461205188 -0400	commit: q
+6f64f5efa1b07149aa4309f830377a3c9cfd4d66 13169c297ab574a902dcb82db42ded92a17ec37a Eric Buedel <ebuedel@purdue.edu> 1461226424 -0400	commit: god mode
+13169c297ab574a902dcb82db42ded92a17ec37a 18e54b38ab8d8ae52318fb984dea020444aa390c Eric Buedel <ebuedel@purdue.edu> 1461226638 -0400	commit: you have the worst choice of fontsgit add . >:(
+18e54b38ab8d8ae52318fb984dea020444aa390c 6d6d3d31477e893936a36620f17e09312672682a Eric Buedel <ebuedel@purdue.edu> 1461228093 -0400	commit: qwerty asdf
+6d6d3d31477e893936a36620f17e09312672682a ad9e1d0294ba676eb1f35a28b0c6e20586e006cd Eric Buedel <ebuedel@purdue.edu> 1461255707 -0400	commit: iunno
+ad9e1d0294ba676eb1f35a28b0c6e20586e006cd 73fbc427e28f9dd06f47f3e1a8bff756c993b54d Eric Buedel <ebuedel@purdue.edu> 1461270112 -0400	commit: q
+73fbc427e28f9dd06f47f3e1a8bff756c993b54d cf4944c077471829fa2d9b75a033b78fc6c9f593 Eric Buedel <ebuedel@purdue.edu> 1461278242 -0400	commit: s
+cf4944c077471829fa2d9b75a033b78fc6c9f593 ac59f1205f18c099cf7e5118f6be3585aab2846b Eric Buedel <ebuedel@purdue.edu> 1461281364 -0400	commit: or we could drop it offat the apartment
+ac59f1205f18c099cf7e5118f6be3585aab2846b 0cf8856ae6ba75545e3fafa3d374b066ff3fb126 Eric Buedel <ebuedel@purdue.edu> 1461281505 -0400	commit: wah wah wah wah wah
+0cf8856ae6ba75545e3fafa3d374b066ff3fb126 87313192121be166a21a43ffe77bcb0a356637ec Eric Buedel <ebuedel@purdue.edu> 1461282262 -0400	pull https://hub.jazz.net/git/ebuedel/Roller.Coaster.Simulator.2 master: Merge made by the 'recursive' strategy.
+87313192121be166a21a43ffe77bcb0a356637ec 8ef4b7ea810de6692fadc3c4dd3752fa839690b5 Eric Buedel <ebuedel@purdue.edu> 1461290368 -0400	commit: ehhhhhh
+8ef4b7ea810de6692fadc3c4dd3752fa839690b5 9c5b1f5dd5299b3d420a3210b45b784ae25e01ba Eric Buedel <ebuedel@purdue.edu> 1461290726 -0400	commit: gggggg
+9c5b1f5dd5299b3d420a3210b45b784ae25e01ba 248f0f09f0566ec5e167c16598ca97fd2b60d0df Eric Buedel <ebuedel@purdue.edu> 1461309613 -0400	commit: new stuffsz
+248f0f09f0566ec5e167c16598ca97fd2b60d0df 5db39bcbc101621eb1be879c1414586a5860ca5e Eric Buedel <ebuedel@purdue.edu> 1461313853 -0400	commit: 4am
+5db39bcbc101621eb1be879c1414586a5860ca5e 1714fdb4bf3f9c714bd0f773970b2fe7488caacb Eric Buedel <ebuedel@purdue.edu> 1461313921 -0400	commit: pen island
+1714fdb4bf3f9c714bd0f773970b2fe7488caacb 8f685d4c1d60e9b90332a73d4af589ed15b2b095 Eric Buedel <ebuedel@purdue.edu> 1461314456 -0400	commit: sddfaraeehts
+8f685d4c1d60e9b90332a73d4af589ed15b2b095 2a1a57a3fac020d0a883e48963f0c160bd09473d Eric Buedel <ebuedel@purdue.edu> 1461315057 -0400	commit: that
+2a1a57a3fac020d0a883e48963f0c160bd09473d 90d84d38e4357311c72bcf67cc991e02804822e3 Eric Buedel <ebuedel@purdue.edu> 1461340094 -0400	commit: a
+90d84d38e4357311c72bcf67cc991e02804822e3 54d91724e6164494c621751c833f7a934c02ddec Eric Buedel <ebuedel@purdue.edu> 1461349204 -0400	commit: gets all requests from place
+54d91724e6164494c621751c833f7a934c02ddec 03d34bf1e93b7ae2d0230794c463f84d2a74bbb8 Eric Buedel <ebuedel@purdue.edu> 1461351535 -0400	commit: q
+03d34bf1e93b7ae2d0230794c463f84d2a74bbb8 4c05cd9ade5e524de5d6dcaa8374fd13b4de4438 Eric Buedel <ebuedel@purdue.edu> 1461351731 -0400	commit: qwe
+4c05cd9ade5e524de5d6dcaa8374fd13b4de4438 fa886084a7a49399c7f404f2573a91880b7da071 Eric Buedel <ebuedel@purdue.edu> 1461351926 -0400	commit: wergwr
+fa886084a7a49399c7f404f2573a91880b7da071 37ac682fd7d048585a8edaa34ac37d1f1b2c85c9 Eric Buedel <ebuedel@purdue.edu> 1461352077 -0400	commit: ethwjrth
+37ac682fd7d048585a8edaa34ac37d1f1b2c85c9 c96caabf9dd579403087b4e20e728b29fe710909 Eric Buedel <ebuedel@purdue.edu> 1461352459 -0400	commit: RAGEEEEEEE
+c96caabf9dd579403087b4e20e728b29fe710909 082aa632e45d07bd398e8b7744bd82a8592a7848 Eric Buedel <ebuedel@purdue.edu> 1461352602 -0400	commit: weiioerpjojer
