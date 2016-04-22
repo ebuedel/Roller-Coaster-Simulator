@@ -144,27 +144,27 @@ function handleRequest(request, response) {
         GET: function (request, response) {
             var filename = request.url;
             if (filename == '/') filename = '/index.html';
-            //filename = './public' + filename;
+            filename = './public' + filename;
 
-            //var stats;
+            var stats;
 
-            //try {
-            //    stats = fs.lstatSync(filename);
-            //} catch (error) {
-            //    response.writeHead(404, {'Content-Type': 'text/plain'});
-            //    response.write('404 Not Found\n');
-            //    response.end();
-            //    return;
-            //}
+            try {
+                stats = fs.lstatSync(filename);
+            } catch (error) {
+                response.writeHead(404, {'Content-Type': 'text/plain'});
+                response.write('404 Not Found\n');
+                response.end();
+                return;
+            }
 
-            //if (stats.isFile()) {
-                //var type = mimeTypes[filename.split(".").pop()];
-                //response.writeHead(200, {'Content-Type': type} );
-                //fs.readFile(filename, function (error, data) {
-                //    response.end(data);
-                //});
-            //}
-            filename ='http://rawgit.com/roth28/roller-coaster-simulator/master' + filename; 
+            if (stats.isFile()) {
+                var type = mimeTypes[filename.split(".").pop()];
+                response.writeHead(200, {'Content-Type': type} );
+                fs.readFile(filename, function (error, data) {
+                    response.end(data);
+                });
+            }
+            /*filename ='http://rawgit.com/roth28/roller-coaster-simulator/master' + filename; 
             http.get(filename, function (httpresponse) {
                 var body = '';
                 var code = httpresponse.headers[0];
@@ -180,7 +180,7 @@ function handleRequest(request, response) {
                     response.write(body);
                     response.end();
                 });
-            });
+            });*/
         },
 
         POST: function (request, response) {

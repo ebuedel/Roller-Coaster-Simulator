@@ -1,0 +1,38 @@
+<!doctype html>
+
+<title>Test</title>
+
+<style>
+    body { font-family: 'Lucida Grande', sans-serif; }
+    ul { list-style: none; max-height: 10em; }
+    a { color: blue; text-decoration: underline; cursor: pointer;}
+</style>
+
+<script src="http://rawgit.com/mrdoob/three.js/master/build/three.min.js"></script>
+<script src="index.js"></script>
+
+<fb:login-button scope="public_profile,email" onlogin="checkLoginState();">
+</fb:login-button>
+<div id="status"></div>
+
+<p>Open a project or create a new one.</p>
+<ul id="project-list"></ul>
+<button id="create-new-button">Create New</button>
+
+<div style="display:none">
+<label>User: </label><input id="user"></input>
+<label>Key: </label><input id="key"></input>
+<select id="select">
+    <option value="list">list</option>
+    <option value="get">get</option>
+    <option value="set" selected>set</option>
+</select>
+<button>Submit</button>
+<br><br>
+
+<textarea rows="8" cols="80" id="value"></textarea>
+
+<h2>Log</h2>
+<pre id="log"></pre>
+
+</div>
