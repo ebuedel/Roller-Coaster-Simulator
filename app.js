@@ -145,7 +145,7 @@ function handleRequest(request, response) {
     var handlers = {
         GET: function (request, response) {
             var filename = request.url;
-            if (filename == '/') filename = '/index.html';
+            /*if (filename == '/') filename = '/index.html';
             filename = './public' + filename;
 
             var stats;
@@ -165,8 +165,8 @@ function handleRequest(request, response) {
                 fs.readFile(filename, function (error, data) {
                     response.end(data);
                 });
-            }
-            /*filename ='http://rawgit.com/roth28/roller-coaster-simulator/master' + filename; 
+            }*/
+            filename ='http://rawgit.com/roth28/roller-coaster-simulator/master' + filename; 
             http.get(filename, function (httpresponse) {
                 var body = '';
                 var code = httpresponse.headers[0];
@@ -182,7 +182,7 @@ function handleRequest(request, response) {
                     response.write(body);
                     response.end();
                 });
-            });*/
+            });
         },
 
         POST: function (request, response) {
