@@ -1,17 +1,24 @@
-//(function() {
+addEventListener('load', function () {
     'use strict';
 
-    var status = document.getElementById('status');
-    var loginButton = document.getElementsByTagName('fb:login-button');
+    var url = document.location.hostname;
+    var user = 'TestUser';
+    var projectList;
+    var $ = THREE, renderer, scene, camera, curve, train;
+    var last = 0, velocity = 0, progress = 0;
+    var currentCurves = 0;
+    var coaster = [];
 
     function checkLoginState() {
-        FB.getLoginStatus(    function (response) {
+        var status = document.getElementById('status');
+
+        FB.getLoginStatus(function (response) {
             if (response.status === 'connected') {
                 console.log('Welcome!  Fetching your information.... ');
                 FB.api('/me', function(response) {
                     console.log('Successful login for: ' + response.name);
                     document.getElementById('status').innerHTML =
-                        'Thanks for logging in, ' + response.name + '!';
+                    'Thanks for logging in, ' + response.name + '!';
                 });
             } else if (response.status === 'not_authorized') {
                 status.textContent = 'Please log into this app.';
@@ -20,28 +27,6 @@
             }
         });
     }
-
-    loginButton.onlogin = checkLoginState;
-
-    window['fbAsyncInit'] = function() {
-        FB.init({
-            appId: '637237206431651',
-            xfbml: true,
-            version: 'v2.6'
-        });
-    };
-//});
-
-window.addEventListener('load', function () {
-    'use strict';
-
-    var url;
-    if (document.location.hostname === "localhost")
-        url = 'localhost';
-    else
-        url = 'http://roller-coaster-simulator.mybluemix.net';
-    var user = 'TestUser';
-    var projectList;
 
     function post(object, callback) {
         var request = new XMLHttpRequest();
@@ -82,25 +67,25 @@ window.addEventListener('load', function () {
                     });
                     li.appendChild(a);
                     li.appendChild(document.createTextNode(' ('));
-                    a = document.createElement('a');
-                    a.textContent = 'delete';
-                    a.addEventListener('click', function () {
-                        if (confirm('Are you sure?')) {
-                            post({ type: 'set', user: user, key: this.previousSibling.previousSibling.textContent }, function (response) {
-                                refresh();
-                            });
-                        }
-                    });
-                    li.appendChild(a);
-                    li.appendChild(document.createTextNode(')'));
-                    ul.appendChild(li);
-                }
-            } else {
-                var li = document.createElement('li');
-                li.textContent = 'You have not created any projects yet :(';
-                ul.appendChild(li);
-            }
-        });
+                        a = document.createElement('a');
+                        a.textContent = 'delete';
+                        a.addEventListener('click', function () {
+                            if (confirm('Are you sure?')) {
+                                post({ type: 'set', user: user, key: this.previousSibling.previousSibling.textContent }, function (response) {
+                                    refresh();
+                                });
+                            }
+                        });
+                        li.appendChild(a);
+                        li.appendChild(document.createTextNode(')'));
+                        ul.appendChild(li);
+                    }
+                } else {
+                    var li = document.createElement('li');
+                    li.textContent = 'You have not created any projects yet :(';
+                        ul.appendChild(li);
+                    }
+                });
     }
 
     function init() {
@@ -130,15 +115,6 @@ window.addEventListener('load', function () {
     }
 
     init();
-});
-
-window.addEventListener('load', function () {
-    "use strict";
-
-    var $ = window.THREE, renderer, scene, camera, curve, train;
-    var last = 0, velocity = 0, progress = 0;
-    var currentCurves = 0;
-    var coaster = [];
 
     // Temporary vectors
     var v1 = new $.Vector3();
@@ -174,28 +150,28 @@ window.addEventListener('load', function () {
 
         this.getPointAt = function (t) {
             return point.set(
-    ox + 2.*t*(1. - 1.*t + t*Math.cos(0.5*y))*Math.cos(yi)*
-      Math.sin(0.5*y) - 1.*l*t*Math.sin(yi) +
-     t*Math.cos(i)*(l / Math.tan(yi) +
-        2.*(1. - 1.*t + t*Math.cos(0.5*y))*Math.sin(0.5*y))*
-      Math.sin(yi) - 1.*l*t*Math.sin(i)*Math.tan(0.5*p) +
-     l*Math.pow(t,2)*Math.sin(i)*Math.tan(0.5*p),
-    oy + t*Math.cos(yi)*(l*Math.sin(i) +
-        2.*(1. - 1.*t + t*Math.cos(0.5*y))*Math.sin(0.5*y)) +
-     t*(-1.*l + 2.*(1. - 1.*t + t*Math.cos(0.5*y))*Math.sin(i)*
-         Math.sin(0.5*y))*Math.sin(yi) +
-     l*t*Math.cos(i)*Math.tan(0.5*p) -
-     1.*l*Math.pow(t,2)*Math.cos(i)*Math.tan(0.5*p),
-    oz + 2.*t*(1. - 1.*t + t*Math.cos(0.5*y))*Math.cos(yi)*
-      Math.sin(0.5*y) - 1.*l*t*Math.sin(yi)
-            ).multiplyScalar(20);
+                ox + 2.*t*(1. - 1.*t + t*Math.cos(0.5*y))*Math.cos(yi)*
+                Math.sin(0.5*y) - 1.*l*t*Math.sin(yi) +
+                t*Math.cos(i)*(l / Math.tan(yi) +
+                    2.*(1. - 1.*t + t*Math.cos(0.5*y))*Math.sin(0.5*y))*
+                Math.sin(yi) - 1.*l*t*Math.sin(i)*Math.tan(0.5*p) +
+                l*Math.pow(t,2)*Math.sin(i)*Math.tan(0.5*p),
+                oy + t*Math.cos(yi)*(l*Math.sin(i) +
+                    2.*(1. - 1.*t + t*Math.cos(0.5*y))*Math.sin(0.5*y)) +
+                t*(-1.*l + 2.*(1. - 1.*t + t*Math.cos(0.5*y))*Math.sin(i)*
+                   Math.sin(0.5*y))*Math.sin(yi) +
+                l*t*Math.cos(i)*Math.tan(0.5*p) -
+                1.*l*Math.pow(t,2)*Math.cos(i)*Math.tan(0.5*p),
+                oz + 2.*t*(1. - 1.*t + t*Math.cos(0.5*y))*Math.cos(yi)*
+                Math.sin(0.5*y) - 1.*l*t*Math.sin(yi)
+                ).multiplyScalar(20);
         };
 
         this.getTangentAt = function (t) {
             var delta = 0.0001;
 
             return tangent.copy(this.getPointAt(Math.min(1, t + delta)))
-                .sub(this.getPointAt(Math.max(0, t - delta))).normalize();
+            .sub(this.getPointAt(Math.max(0, t - delta))).normalize();
         };
     }
 
@@ -231,7 +207,7 @@ window.addEventListener('load', function () {
             var delta = 0.0001;
 
             return tangent.copy(this.getPointAt(Math.min(1, t + delta)))
-                .sub(this.getPointAt(Math.max(0, t - delta))).normalize();
+            .sub(this.getPointAt(Math.max(0, t - delta))).normalize();
         }
     }
 
@@ -242,12 +218,12 @@ window.addEventListener('load', function () {
         var color2 = new $.Vector3(0.8, 0.8, 0);
 
         var triangle = [
-            new $.Vector3(-2.25, 0, 0),
-            new $.Vector3(0, -0.5, 0),
-            new $.Vector3(0, -1.75, 0),
-            new $.Vector3(0, -0.5, 0),
-            new $.Vector3(2.25, 0, 0),
-            new $.Vector3(0, -1.75, 0)
+        new $.Vector3(-2.25, 0, 0),
+        new $.Vector3(0, -0.5, 0),
+        new $.Vector3(0, -1.75, 0),
+        new $.Vector3(0, -0.5, 0),
+        new $.Vector3(2.25, 0, 0),
+        new $.Vector3(0, -1.75, 0)
         ];
 
         var vertices = [];
@@ -549,22 +525,10 @@ window.addEventListener('load', function () {
         scene.add(mesh);
     }
 
-    function onLoad() {
-        var domElement = renderer.domElement;
-        var style = domElement.style;
-
-        style.position = 'fixed';
-        style.top = style.left = '0';
-        style.background = 'black';
-
-        window.document.body.appendChild(renderer.domElement);
-        window.requestAnimationFrame(animate);
-    }
-
     function onResize() {
-        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.aspect = innerWidth / innerHeight;
         camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setSize(innerWidth, innerHeight);
     }
 
     var cameraVelocity = new $.Vector3(); 
@@ -579,7 +543,7 @@ window.addEventListener('load', function () {
     }
 
     function animate(time) {
-        window.requestAnimationFrame(animate);
+        requestAnimationFrame(animate);
 /*
         var delta = time - last;
         last = time;
@@ -591,7 +555,7 @@ window.addEventListener('load', function () {
         var tangent = curve.getTangentAt(progress);
         velocity = Math.max(velocity - tangent.y * 0.000030, 0.0008);
         train.lookAt(train.position.clone().add(tangent));
-*/
+        */
         updateCamera();
         renderer.render(scene, camera);
     }
@@ -626,36 +590,36 @@ window.addEventListener('load', function () {
     function onKeyUp(e) {
         switch (e.keyCode) {
             case 82: /* R */ case 70: /* F */
-                cameraVelocity.y = 0; break;
+            cameraVelocity.y = 0; break;
 
             // Zoom In/Out
             case 87: /* W */ case 83: /* S */
-                cameraVelocity.set(0, 0, 0); break;
+            cameraVelocity.set(0, 0, 0); break;
 
             // Rotation Left/Right
             case 68: /* D */ case 65: /* A */
-                cameraRotation = 0; break;
+            cameraRotation = 0; break;
 
             // Panning
             case 39: /* Right */ case 37: /* Left */
-                cameraVelocity.x = 0; break;
+            cameraVelocity.x = 0; break;
             case 40: /* Down */ case 38: /* Up */
-                cameraVelocity.z = 0; break;
+            cameraVelocity.z = 0; break;
         }
     }
 
     function initialize() {
         RollerCoasterGeometry.prototype =
-            RollerCoasterLiftersGeometry.prototype =
-            RollerCoasterShadowGeometry.prototype =
-            SkyGeometry.prototype =
-            TreesGeometry.prototype = $.BufferGeometry.prototype;
+        RollerCoasterLiftersGeometry.prototype =
+        RollerCoasterShadowGeometry.prototype =
+        SkyGeometry.prototype =
+        TreesGeometry.prototype = $.BufferGeometry.prototype;
 
         renderer = new $.WebGLRenderer({ antialias: false });
         renderer.setClearColor(0xd0d0ff);
-        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setPixelRatio(devicePixelRatio);
         scene = new $.Scene();
-        camera = new $.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 5000);
+        camera = new $.PerspectiveCamera(40, innerWidth / innerHeight, 1, 5000);
         camera.position.x = 1000;
         camera.position.y = 1000;
         camera.position.z = 1000;
@@ -669,12 +633,22 @@ window.addEventListener('load', function () {
         createRollerCoaster();
         onResize();
 
-        window.onload = onLoad;
-        window.onresize = onResize;
-        window.onkeydown = onKeyDown;
-        window.onkeyup = onKeyUp;
+        var loginButton = document.getElementsByTagName('fb:login-button');
+        loginButton.onlogin = checkLoginState;
+
+        var domElement = renderer.domElement;
+        var style = domElement.style;
+
+        style.position = 'fixed';
+        style.top = style.left = '0';
+        style.background = 'black';
+
+        document.body.appendChild(renderer.domElement);
+        requestAnimationFrame(animate);
+        addEventListener('resize', onResize);
+        addEventListener('keydown', onKeyDown);
+        addEventListener('keyup', onKeyUp);
     }
 
     initialize();
 });
-

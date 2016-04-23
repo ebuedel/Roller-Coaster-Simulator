@@ -8,9 +8,19 @@
     a { color: blue; text-decoration: underline; cursor: pointer;}
 </style>
 
-<script src="index.js"></script>
-<script src="https://connect.facebook.net/en_US/sdk.js"></script>
-<script src="http://rawgit.com/mrdoob/three.js/master/build/three.min.js"></script>
+<script>
+    fbAsyncInit = function() {
+        FB.init({
+            appId: '637237206431651',
+            xfbml: true,
+            version: 'v2.6'
+        });
+    };
+</script>
+
+<script async src="index.js"></script>
+<script async src="https://rawgit.com/mrdoob/three.js/master/build/three.min.js"></script>
+<script async src="https://connect.facebook.net/en_US/sdk.js"></script>
 
 <fb:login-button scope="public_profile,email"></fb:login-button>
 <p id="status"></p>
@@ -18,4 +28,3 @@
 <p>Open a project or create a new one.</p>
 <ul id="project-list"></ul>
 <button id="create-new-button">Create New</button>
-
