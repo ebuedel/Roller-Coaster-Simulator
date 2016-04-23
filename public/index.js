@@ -90,40 +90,6 @@ window.addEventListener('load', function () {
         url = 'localhost';
     else
         url = 'http://roller-coaster-simulator.mybluemix.net';
-    var button = document.getElementsByTagName('button')[0];
-
-    var type = document.getElementById('select');
-    var user = document.getElementById('user');
-    var key = document.getElementById('key');
-    var value = document.getElementById('value');
-    var log = document.getElementById('log');
-    
-    button.addEventListener('click', function () { 
-        var request = new XMLHttpRequest();
-        request.addEventListener('readystatechange', function () {
-            if (request.readyState === 4)
-                log.textContent += request.response + '\n';
-        });
-
-        request.open('POST', url, true);
-        request.setRequestHeader('Content-Type', 'application/json');
-        request.send(JSON.stringify({
-            type: type.value,
-            user: user.value,
-            key: key.value,
-            value: value.value
-        }));
-    });
-});
-
-window.addEventListener('load', function () {
-    'use strict';
-
-    var url;
-    if (document.location.hostname === "localhost")
-        url = 'localhost';
-    else
-        url = 'http://roller-coaster-simulator.mybluemix.net';
     var user = 'TestUser';
     var projectList;
 

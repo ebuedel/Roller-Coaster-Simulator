@@ -1,0 +1,42 @@
+<!doctype html>
+
+<title>String Server</title>
+
+<h1>String Server</h1>
+<label>User: </label><input id="user"></input>
+<label>Key: </label><input id="key"></input>
+<select id="type">
+    <option value="list">list</option>
+    <option value="get">get</option>
+    <option value="set">set</option>
+</select>
+<button id="submit">Submit</button>
+<br>
+<textarea rows="8" cols="80" id="value"></textarea>
+<h2>Log</h2>
+<pre id="log"></pre>
+
+<script>
+    (function () {
+        'use strict';
+
+        var $ = document.getElementById.bind(document);
+
+        $('submit').addEventListener('click', function () { 
+            var request = new XMLHttpRequest();
+            request.addEventListener('readystatechange', function () {
+                if (request.readyState === 4)
+                    $('log').textContent += request.response + '\n';
+            });
+
+            request.open('POST', document.location.hostname, true);
+            request.setRequestHeader('Content-Type', 'application/json');
+            request.send(JSON.stringify({
+                type: $('type').value,
+                user: $('user').value,
+                key: $('key').value,
+                value: $('value').value
+            }));
+        });
+    }());
+</script>
