@@ -9,6 +9,12 @@ addEventListener('load', function () {
     var currentCurves = 0;
     var coaster = [];
 
+    // Temporary vectors
+    var v1 = new $.Vector3();
+    var v2 = new $.Vector3();
+    var v3 = new $.Vector3();
+    var v4 = new $.Vector3();
+
     function checkLoginState() {
         var status = document.getElementById('status');
 
@@ -41,7 +47,7 @@ addEventListener('load', function () {
         request.send(JSON.stringify(object));
     }
 
-    function refresh() {
+    function refreshProjectList() {
         var ul = document.getElementById('project-list');
 
         while (ul.firstChild)
@@ -72,7 +78,7 @@ addEventListener('load', function () {
                         a.addEventListener('click', function () {
                             if (confirm('Are you sure?')) {
                                 post({ type: 'set', user: user, key: this.previousSibling.previousSibling.textContent }, function (response) {
-                                    refresh();
+                                    refreshProjectList();
                                 });
                             }
                         });
@@ -88,11 +94,28 @@ addEventListener('load', function () {
                 });
     }
 
-    function init() {
-        refresh();
+    function createUserInterface() {
+        onResize();
+
+        var loginButton = document.getElementsByTagName('fb:login-button');
+        loginButton.onlogin = checkLoginState;
+
+        var domElement = renderer.domElement;
+        var style = domElement.style;
+
+        style.position = 'fixed';
+        style.top = style.left = '0';
+        style.background = 'black';
+
+        document.body.appendChild(renderer.domElement);
+        requestAnimationFrame(animate);
+        addEventListener('resize', onResize);
+        addEventListener('keydown', onKeyDown);
+        addEventListener('keyup', onKeyUp);
+
+        refreshProjectList();
 
         var createNewButton = document.getElementById('create-new-button');
-
         createNewButton.addEventListener('click', function () {
             var n = 1;
             while (projectList.indexOf('Project' + n) !== -1) n++;
@@ -106,21 +129,13 @@ addEventListener('load', function () {
 
             post(request, function (response) {
                 if (!response.error) {
-                    refresh();
+                    refreshProjectList();
                 } else {
                     alert(response.error);
                 }
             });
-        }); 
+        });
     }
-
-    init();
-
-    // Temporary vectors
-    var v1 = new $.Vector3();
-    var v2 = new $.Vector3();
-    var v3 = new $.Vector3();
-    var v4 = new $.Vector3();
 
     function createQuad(vertices, v1, v2, v3, v4) {
         vertices.push(
@@ -631,23 +646,7 @@ addEventListener('load', function () {
 
         createEnvironment();
         createRollerCoaster();
-        onResize();
-
-        var loginButton = document.getElementsByTagName('fb:login-button');
-        loginButton.onlogin = checkLoginState;
-
-        var domElement = renderer.domElement;
-        var style = domElement.style;
-
-        style.position = 'fixed';
-        style.top = style.left = '0';
-        style.background = 'black';
-
-        document.body.appendChild(renderer.domElement);
-        requestAnimationFrame(animate);
-        addEventListener('resize', onResize);
-        addEventListener('keydown', onKeyDown);
-        addEventListener('keyup', onKeyUp);
+        createUserInterface();
     }
 
     initialize();

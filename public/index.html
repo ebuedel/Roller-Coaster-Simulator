@@ -9,7 +9,7 @@
 </style>
 
 <script>
-    fbAsyncInit = function() {
+    fbAsyncInit = function () {
         FB.init({
             appId: '637237206431651',
             xfbml: true,
@@ -22,9 +22,13 @@
 <script async src="https://rawgit.com/mrdoob/three.js/master/build/three.min.js"></script>
 <script async src="https://connect.facebook.net/en_US/sdk.js"></script>
 
-<fb:login-button scope="public_profile,email"></fb:login-button>
-<p id="status"></p>
+<div style="position:fixed;z-index:1000">
 
-<p>Open a project or create a new one.</p>
-<ul id="project-list"></ul>
-<button id="create-new-button">Create New</button>
+
+    <fb:login-button scope="public_profile,email"></fb:login-button>
+    <p id="status"></p>
+
+    <p>Open a project or create a new one.</p>
+    <ul id="project-list"></ul>
+    <button id="create-new-button">Create New</button>
+</div>
