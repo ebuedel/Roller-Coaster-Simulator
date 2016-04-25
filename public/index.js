@@ -1,7 +1,8 @@
 (function (window) {
     'use strict';
 
-    var $, _, FB, JSON, Math, document, app, renderer, scene,
+    // TODO: Add globals for $window, $body, ...
+    var $, $window, _, FB, JSON, Math, document, app, renderer, scene,
         curve, allCurves, coasterGeo, liftersGeo, shadowGeo,
         train, /* last = 0, velocity = 0, progress = 0, */
         userInterface, flyControls, upVector, v1, v2, v3, v4;
@@ -100,14 +101,22 @@
     }
 
     function FlyControls(camera, movementSpeed) {
-        var velocity = new _.Vector3();
-        var rotation = 0;
-        var totalRotation = (function () {
+        var velocity, rotation, totalRotation, borderSize;
+
+        function getCameraXZRotation() {
             var direction = camera.getWorldDirection().multiplyScalar(-1);
             return -Math.atan2(direction.x, direction.z);
-        }());
+        }
 
-        $(window).keydown(function (e) {
+        function getBorderSize() {
+            return Math.min($window.width() / 20, $window.height() / 20)
+        }
+
+        function onWindowResize() {
+            borderSize = getBorderSize();
+        }
+
+        function onWindowKeyDown(e) {
             var forward = camera.getWorldDirection();
 
             switch (e.keyCode) {
@@ -119,12 +128,12 @@
                 case 70: /* F */ velocity.y = -1; break;
                 case 87: /* W */ velocity.add(forward); break;
                 case 83: /* S */ velocity.sub(forward); break;
-                case 68: /* D */ rotation = Math.PI/360; break;
-                case 65: /* A */ rotation = -Math.PI/360; break;
+                case 68: /* D */ rotation = Math.PI/180; break;
+                case 65: /* A */ rotation = -Math.PI/180; break;
             }
-        });
+        }
 
-        $(window).keyup(function (e) {
+        function onWindowKeyUp(e) {
             switch (e.keyCode) {
                 case 39: /* Right */ case 37: /* Left */ velocity.x = 0; break;
                 case 40: /* Down */ case 38: /* Up */ velocity.z = 0; break;
@@ -132,11 +141,22 @@
                 case 87: /* W */ case 83: /* S */ velocity.set(0, 0, 0); break;
                 case 68: /* D */ case 65: /* A */ rotation = 0; break;
             }
-        });
+        }
 
-        this.camera = camera;
+        function onWindowMouseMove(e) {
+            var x = e.pageX, y = e.pageY;
+            velocity.x = x > $window.width() - borderSize ? 1 : (x < borderSize ? -1 : 0);
+            velocity.z = y > $window.height() - borderSize ? 1 : (y < borderSize ? -1 : 0);
+        }
 
-        this.update = function () {
+        function bindEventHandlers() {
+            $window.keydown(onWindowKeyDown);
+            $window.keyup(onWindowKeyUp);
+            $window.resize(onWindowResize);
+            $window.mousemove(onWindowMouseMove);
+        }
+
+        function update() {
             v1.copy(velocity)
                 .applyAxisAngle(upVector, totalRotation += rotation)
                 .multiplyScalar(movementSpeed);
@@ -145,6 +165,14 @@
             camera.rotation.order = 'YXZ';
             camera.rotation.y += rotation;
         }
+
+        velocity = new _.Vector3();
+        rotation = 0;
+        totalRotation = getCameraXZRotation();
+        borderSize = getBorderSize();
+        this.camera = camera;
+        this.update = update;
+        bindEventHandlers();
     }
 
     function UserInterface() {
@@ -247,7 +275,8 @@
         }
 
         // TODO: Try to load this from localstorage.
-        var antialias = this.currentAntialiasValue = screen.width * screen.height <= 1920 * 1080
+        var antialias = this.currentAntialiasValue =
+            window.screen.width * window.screen.height <= 1920 * 1080
         $('#options-dialog-antialias').prop('checked', antialias);
 
         $('#project-name').click(onRenameButtonClicked);
@@ -611,7 +640,7 @@
         renderer.setClearColor(0xd0d0ff);
         renderer.setPixelRatio(devicePixelRatio);
 
-        $(window).trigger('resize');
+        $window.trigger('resize');
         $('body').append(renderer.domElement);
     }
 
@@ -654,7 +683,7 @@
 
         function createRollerCoaster(scene) {
             scene.add(new _.Mesh(
-                coasterGeo = new RollerCoasterGeometry(35),
+                coasterGeo = new RollerCoasterGeometry(allCurves.length * 10),
                 new _.MeshStandardMaterial({
                     roughness: 0.1,
                     metalness: 0,
@@ -671,7 +700,7 @@
             scene.add(mesh);
 
             mesh = new _.Mesh(
-                shadowGeo = new RollerCoasterShadowGeometry(allCurves.length * 2),
+                shadowGeo = new RollerCoasterShadowGeometry(allCurves.length * 10),
                 new _.MeshBasicMaterial({
                     color: 0x000000,
                     opacity: 0.1,
@@ -686,13 +715,13 @@
         function createScene() {
             train = new _.Object3D();
 
-            var camera = new _.PerspectiveCamera(40, innerWidth / innerHeight, 1, 5000);
+            var camera = new _.PerspectiveCamera(40, $window.width() / $window.height(), 1, 5000);
             camera.position.x = 0;
             camera.position.y = 300;
             camera.position.z = 300;
             camera.lookAt(new _.Vector3(0, 0, 0));
 
-            flyControls = new FlyControls(camera, 10);
+            flyControls = new FlyControls(camera, 5);
 
             var scene = new _.Scene();
             scene.add(train);
@@ -701,10 +730,10 @@
             createEnvironment(scene);
             createRollerCoaster(scene);
 
-            $(window).resize(function () {
-                camera.aspect = innerWidth / innerHeight;
+            $window.resize(function () {
+                camera.aspect = $window.width() / $window.height();
                 camera.updateProjectionMatrix();
-                renderer.setSize(innerWidth, innerHeight);
+                renderer.setSize($window.width(), $window.height());
             });
 
             return scene;
@@ -748,6 +777,7 @@
 
     function importGlobals() {
         $ = window.$;
+        $window = $(window);
         _ = window.THREE;
         FB = window.FB;
         JSON = window.JSON;
