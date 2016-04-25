@@ -3,7 +3,7 @@
 
     // TODO: Add globals for $window, $body, ...
     var $, $window, _, FB, JSON, Math, document, app, renderer, scene,
-        curve, allCurves, coasterGeo, liftersGeo, shadowGeo,
+        curve, coasterGeo, liftersGeo, shadowGeo,
         train, /* last = 0, velocity = 0, progress = 0, */
         userInterface, flyControls, upVector, v1, v2, v3, v4;
 
@@ -270,7 +270,7 @@
             liftersGeo.removeAttribute('normal');
             shadowGeo.removeAttribute('position');
 
-            curve = new EntireCurve('add', pitch, yaw, length);
+            curve = new EntireCurve(curve, 'add', pitch, yaw, length);
             app.updateRollerCoaster();
         }
 
@@ -355,35 +355,31 @@
         };
     }
 
-    function EntireCurve(updateType, p, y, l) {
+    function EntireCurve(entireCurve, updateType, p, y, l) {
         var point = new _.Vector3();
         var tangent = new _.Vector3();
+        var curves = this.curves = (entireCurve ? entireCurve.curves : [ new Curve(2, 2, 2, 0, 0, 5, 0, 1e-10) ]);
+        var length = curves.length;
 
-        this.curves = (function () {
-            if (updateType === 'add' && allCurves.length !== 0) {
-                var lastCurve = allCurves[allCurves.length - 1];
-                var last = lastCurve.getPointAt(1);
-                allCurves.push(new Curve(last.x / 20, last.y / 20, last.z / 20, p, y, l, lastCurve.getPitch(), lastCurve.getYaw()));
-            } else if (updateType === 'remove') {
-                if (allCurves.length > 1)
-                    allCurves.pop();
-            } else {
-                allCurves = [ new Curve(2, 2, 2, 0, 0, 5, 0, 1e-10) ];
-            }
-
-            return allCurves;
-        }());
+        if (updateType === 'add' && length !== 0) {
+            var lastCurve = curves[length - 1];
+            var last = lastCurve.getPointAt(1);
+            curves.push(new Curve(last.x / 20, last.y / 20, last.z / 20, p, y, l, lastCurve.getPitch(), lastCurve.getYaw()));
+        } else if (updateType === 'remove') {
+            if (length > 1)
+                curves.pop();
+        }
 
         this.getPointAt = function (t) {
-            var numCurves = this.curves.length;
-            return this.curves[(t == 1 ? (numCurves - 1) : Math.floor(t * numCurves))]
-                .getPointAt(t * numCurves - Math.floor(t * numCurves));
+            var length = curves.length;
+            return curves[(t == 1 ? (length - 1) : Math.floor(t * length))]
+                .getPointAt(t * length - Math.floor(t * length));
         };
 
         this.getTangentAt = function (t) {
             var delta = 0.0001;
             return tangent.copy(this.getPointAt(Math.min(1, t + delta)))
-            .sub(this.getPointAt(Math.max(0, t - delta))).normalize();
+                .sub(this.getPointAt(Math.max(0, t - delta))).normalize();
         }
     }
 
@@ -682,8 +678,10 @@
         }
 
         function createRollerCoaster(scene) {
+            var length = curve.curves.length;
+
             scene.add(new _.Mesh(
-                coasterGeo = new RollerCoasterGeometry(allCurves.length * 10),
+                coasterGeo = new RollerCoasterGeometry(length * 10),
                 new _.MeshStandardMaterial({
                     roughness: 0.1,
                     metalness: 0,
@@ -691,7 +689,7 @@
                 })));
 
             var mesh = new _.Mesh(
-                liftersGeo = new RollerCoasterLiftersGeometry(allCurves.length * 2),
+                liftersGeo = new RollerCoasterLiftersGeometry(length * 2),
                 new _.MeshStandardMaterial({
                     roughness: 0.1,
                     metalness: 0
@@ -700,7 +698,7 @@
             scene.add(mesh);
 
             mesh = new _.Mesh(
-                shadowGeo = new RollerCoasterShadowGeometry(allCurves.length * 10),
+                shadowGeo = new RollerCoasterShadowGeometry(length * 10),
                 new _.MeshBasicMaterial({
                     color: 0x000000,
                     opacity: 0.1,
