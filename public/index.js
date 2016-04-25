@@ -1,8 +1,7 @@
 (function (window) {
     'use strict';
 
-    // TODO: Add globals for $window, $body, ...
-    var $, $window, _, FB, JSON, Math, document,
+    var $, $window, $document, _, FB, JSON, Math,
         app, renderer, scene, curve, train,
         userInterface, flyControls, upVector, v1, v2, v3, v4;
 
@@ -25,7 +24,7 @@
     function postJSON(object, success) {
         $.ajax({
             type: 'POST',
-            url: document.location.hostname,
+            url: window.location.hostname,
             data: JSON.stringify(object),
             success: success,
             contentType: "application/json",
@@ -51,9 +50,21 @@
         });
     }
 
+    function EventMap(namespace, events) {
+        events.forEach(function (e) {
+            e[0].on(e[1] + '.' + namespace, e[2]);
+        });
+
+        this.dispose = function () {
+            events.forEach(function (e) {
+                e[0].off(e[1] + '.' + namespace);
+            });
+        }
+    }
+
     function FlyControls(camera, movementSpeed) {
-        var velocity, rotation, totalRotation, borderSize;
-        console.log(camera.getWorldDirection().multiplyScalar(-1));
+        var borderPercent = 1 / 50, minimumBorder = 10,
+            eventMap, velocity, rotation, totalRotation, borderSize;
 
         function getCameraXZRotation() {
             var direction = camera.getWorldDirection().multiplyScalar(-1);
@@ -61,7 +72,10 @@
         }
 
         function getBorderSize() {
-            return Math.min($window.width() / 20, $window.height() / 20)
+            return Math.min(
+                minimumBorder,
+                $window.width() * borderPercent,
+                $window.height() * borderPercent);
         }
 
         function onWindowResize() {
@@ -101,11 +115,11 @@
             velocity.z = y > $window.height() - borderSize ? 1 : (y < borderSize ? -1 : 0);
         }
 
-        function bindEventHandlers() {
-            $window.keydown(onWindowKeyDown);
-            $window.keyup(onWindowKeyUp);
-            $window.resize(onWindowResize);
-            $window.mousemove(onWindowMouseMove);
+        function onDocumentMouseOut(e) {
+            e = e ? e : window.event;
+            var from = e.relatedTarget || e.toElement;
+            if (!from || from.nodeName == "HTML")
+                velocity.x = velocity.z = 0;
         }
 
         function update() {
@@ -118,17 +132,27 @@
             camera.rotation.y += rotation;
         }
 
+        function dispose() {
+            eventMap.dispose();
+        }
+
         velocity = new _.Vector3();
         rotation = 0;
         totalRotation = getCameraXZRotation();
         borderSize = getBorderSize();
+        eventMap = new EventMap('flyControls', [
+            [ $window, 'keydown', onWindowKeyDown ],
+            [ $window, 'keyup', onWindowKeyUp ],
+            [ $window, 'resize', onWindowResize ],
+            [ $window, 'mousemove', onWindowMouseMove ],
+            [ $document, 'mouseout', onDocumentMouseOut ]
+        ]);
         this.camera = camera;
         this.update = update;
-        bindEventHandlers();
+        this.dispose = dispose;
     }
 
     function UserInterface() {
-
         function onNewButtonClicked() {
             // TODO: Save the current roller coaster.
             app.createNewProject(function (name) {
@@ -911,11 +935,11 @@
     function importGlobals() {
         $ = window.$;
         $window = $(window);
+        $document = $(window.document);
         _ = window.THREE;
         FB = window.FB;
         JSON = window.JSON;
         Math = window.Math;
-        document = window.document;
     }
 
     function initializeGeometryPrototypes() {
