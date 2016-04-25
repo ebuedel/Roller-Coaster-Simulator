@@ -1,0 +1,23 @@
+html {
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+}
+
+canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: -1;
+}
+
+.margin-icon {
+    position: relative !important;
+    left: -1.5rem;
+    width: 0.1rem;
+}
+
+a {
+    cursor: pointer;
+}

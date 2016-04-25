@@ -1,34 +1,129 @@
 <!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
 
-<title>Test</title>
+    <meta name="author" content="Eric Buedel and Michael Roth">
+    <meta name="description" content="Roller Coaster Simulator is an application where users can create and ride roller coasters of their own design.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-<style>
-    body { font-family: 'Lucida Grande', sans-serif; }
-    ul { list-style: none; max-height: 10em; }
-    a { color: blue; text-decoration: underline; cursor: pointer;}
-</style>
+    <title>Roller Coaster Simulator</title>
 
-<script>
-    fbAsyncInit = function () {
-        FB.init({
-            appId: '637237206431651',
-            xfbml: true,
-            version: 'v2.6'
-        });
-    };
-</script>
+    <script defer src="index.js"></script>
+    <script defer src="https://code.jquery.com/jquery-2.2.3.min.js"></script>
+    <script defer src="https://cdn.rawgit.com/mrdoob/three.js/master/build/three.min.js"></script>
+    <script defer src="https://cdn.rawgit.com/olton/Metro-UI-CSS/master/build/js/metro.min.js"></script>
+    <script defer src="https://connect.facebook.net/en_US/sdk.js"></script>
 
-<script async src="index.js"></script>
-<script async src="https://rawgit.com/mrdoob/three.js/master/build/three.min.js"></script>
-<script async src="https://connect.facebook.net/en_US/sdk.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdn.rawgit.com/olton/Metro-UI-CSS/master/build/css/metro.min.css">
+    <link rel="stylesheet" href="https://cdn.rawgit.com/olton/Metro-UI-CSS/master/build/css/metro-icons.min.css">
+</head>
+<body style="display: none;">
+    <div class="app-bar" data-role="app-bar">
+        <div style="display: none;" id="project-name-wrapper">
+            <span class="app-bar-element" id="project-name"></span>
+            <span class="app-bar-divider"></span>
+        </div>
 
-<div style="position:fixed;z-index:1000">
+        <ul class="app-bar-menu">
+            <li>
+                <a class="dropdown-toggle">File</a>
+                <ul class="d-menu" data-role="dropdown">
+                    <li><a data-hotkey="Ctrl+N" id="file-new-button"><span class="mif-plus margin-icon"></span>New</a></li>
+                    <li><a data-hotkey="Ctrl+O" id="file-open-button"><span class="mif-folder margin-icon"></span>Open...</a></li>
+                    <li><a id="file-rename-button" href="#">Rename...</a></li>
+                    <li><a id="file-delete-button" href="#"><span class="mif-bin margin-icon"></span>Delete</a></li>
+                </ul>
+            </li>
+            <li>
+                <a class="dropdown-toggle">Edit</a>
+                <ul class="d-menu" data-role="dropdown">
+                    <li><a data-hotkey="Ctrl+Z" id="edit-undo-button"><span class="mif-undo margin-icon"></span>Undo</a></li>
+                    <li><a data-hotkey="Ctrl+Y" id="edit-redo-button"><span class="mif-redo margin-icon"></span>Redo</a></li>
+                </ul>
+            </li>
+        </ul>
 
+        <a href="#" class="app-bar-element" id="options-button">Options...</a>
 
-    <fb:login-button scope="public_profile,email"></fb:login-button>
-    <p id="status"></p>
+        <a href="#" class="app-bar-element"id="play-button">
+            <span class="icon mif-play"></span> <span class="text">Play</span></a>
 
-    <p>Open a project or create a new one.</p>
-    <ul id="project-list"></ul>
-    <button id="create-new-button">Create New</button>
-</div>
+        <div class="app-bar-element place-right">
+            <span class="icon mif-question" id="help-button"></span>
+        </div>
+
+        <div class="app-bar-element place-right">
+            <a class="dropdown-toggle fg-white">
+                <span class="icon mif-enter"></span> <span class="text">Enter</span></a>
+            <div class="app-bar-drop-container bg-white fg-dark place-right padding20"
+                    data-role="dropdown" data-no-close="true">
+                <p class="text-accent align-center" style="width: 250px;">
+                    <span id="fb-login-status">Please log into Facebook.</span>
+                    <fb:login-button scope="public_profile,email" id="fb-login-button"></fb:login-button>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid">
+        <div class="row cells4 padding20">
+            <div class="cell">
+                <div class="panel" data-role="draggable" data-drag-element=".heading">
+                    <div class="heading">
+                        <span class="icon mif-wrench"></span>
+                        <span class="title">Track Tools</span>
+                    </div>
+                    <div class="padding20">
+                        Yaw: <div class="slider cycle-marker" id="yaw-slider" data-role="slider"
+                            data-accuracy="10" data-min-value="-180" data-max-value="180" data-show-hint="true"></div>
+                        Pitch: <div class="slider cycle-marker" id="pitch-slider" data-role="slider"
+                            data-accuracy="10" data-min-value="-180" data-max-value="180" data-show-hint="true"></div>
+                        Length: <div class="slider cycle-marker" id="length-slider" data-role="slider"
+                            data-accuracy="10" data-min-value="0" data-max-value="100" data-show-hint="true"></div>
+                        <div class="align-center"><a class="button" id="create-button">Create</a></div>
+                    </div>
+                </div>
+            </div>
+            <div class="cell colspan3"></div>
+        </div>
+    </div>
+
+    <div id="file-open-dialog" class="dialog padding20"
+            data-role="dialog,draggable" data-drag-element=".heading" data-close-button="true" data-width="500"
+            data-overlay="true" data-overlay-color="op-dark" data-overlay-click-close="true">
+        <h1 class="heading">Open</h1>
+        <br><table class="table striped hovered" id="project-list"></table>
+    </div>
+
+    <div id="file-rename-dialog" class="dialog padding20"
+            data-role="dialog,draggable" data-drag-element=".heading" data-close-button="true" data-width="500"
+            data-overlay="true" data-overlay-color="op-dark" data-overlay-click-close="true">
+        <h1 class="heading">Rename</h1>
+        <p>Enter a new name for your project.</p>
+        <div class="align-center">
+            <div class="input-control text">
+                <input type="text">
+            </div>
+            <a class="button" id="file-rename-ok-button">OK</a>
+            <div id="rename-message"></div>
+        </div>
+    </div>
+
+    <div id="options-dialog" class="dialog padding20"
+            data-role="dialog,draggable" data-drag-element=".heading" data-close-button="true" data-width="500"
+            data-overlay="true" data-overlay-color="op-dark" data-overlay-click-close="true">
+        <h1 class="heading">Options</h1>
+        <br><p>
+        <label class="switch">
+            <input type="checkbox" id="options-dialog-antialias">
+            <span class="check"></span>
+        </label> Antialias
+        <br><br><br><br>More to come...<br>
+        <div class="align-center">
+            <a class="button" id="options-dialog-save-button">Save</a>
+        </div>
+    </div>
+</body>
+</html>

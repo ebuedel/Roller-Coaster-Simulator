@@ -1,140 +1,268 @@
-addEventListener('load', function () {
+(function (window) {
     'use strict';
 
-    var url = document.location.hostname;
-    var user = 'TestUser';
-    var projectList;
-    var $ = THREE, renderer, scene, camera, curve, train;
-    var last = 0, velocity = 0, progress = 0;
-    var currentCurves = 0;
-    var coaster = [];
+    var $, _, FB, JSON, Math, document, app, renderer, scene,
+        curve, allCurves, coasterGeo, liftersGeo, shadowGeo,
+        train, /* last = 0, velocity = 0, progress = 0, */
+        userInterface, flyControls, upVector, v1, v2, v3, v4;
 
-    // Temporary vectors
-    var v1 = new $.Vector3();
-    var v2 = new $.Vector3();
-    var v3 = new $.Vector3();
-    var v4 = new $.Vector3();
+    function fbAsyncInit() {
+        FB.init({
+            appId: '637237206431651',
+            xfbml: true,
+            version: 'v2.6'
+        });
+    };
+
+    function isUndefined(x) {
+        return typeof x === 'undefined';
+    }
+
+    function removeElement(element) {
+        element.parentNode.removeChild(element);
+    }
+
+    function postJSON(object, success) {
+        $.ajax({
+            type: 'POST',
+            url: document.location.hostname,
+            data: JSON.stringify(object),
+            success: success,
+            contentType: "application/json",
+            dataType: 'json'
+        });
+    }
 
     function checkLoginState() {
-        var status = document.getElementById('status');
+        var fbLoginStatus = $('#fb-login-status');
 
         FB.getLoginStatus(function (response) {
             if (response.status === 'connected') {
-                console.log('Welcome!  Fetching your information.... ');
                 FB.api('/me', function(response) {
-                    console.log('Successful login for: ' + response.name);
-                    document.getElementById('status').innerHTML =
-                    'Thanks for logging in, ' + response.name + '!';
+                    $('#status').html('Thanks for logging in, ' + response.name + '!');
+                    // TODO: Add sign out button.
+                    // TODO: Set current user and enable all save related functionality.
                 });
             } else if (response.status === 'not_authorized') {
-                status.textContent = 'Please log into this app.';
+                fbLoginStatus.text('Please log into this app.');
             } else {
-                status.textContent = 'Please log into Facebook.';
+                fbLoginStatus.text('Please log into Facebook.');
             }
         });
     }
 
-    function post(object, callback) {
-        var request = new XMLHttpRequest();
+    function updateProjectList(callback) {
+        var currentUser = userInterface.currentUser;
+        var table = $('#project-list');
+        table.html('<tr><th>Filename</th><th>Last Modified</th><th>Size</th></tr>');
 
-        request.addEventListener('readystatechange', function () {
-            if (request.readyState === 4)
-                callback(JSON.parse(request.response));
-        });
+        postJSON({ type: 'list', user: currentUser }, function (response) {
+            var list = response.value || [];
+            if (!isUndefined(callback))
+                callback(list);
 
-        request.open('POST', url, true);
-        request.setRequestHeader('Content-Type', 'application/json');
-        request.send(JSON.stringify(object));
-    }
-
-    function refreshProjectList() {
-        var ul = document.getElementById('project-list');
-
-        while (ul.firstChild)
-            ul.removeChild(ul.firstChild);
-
-        post({ type: 'list', user: user }, function (response) {
-            projectList = response.value || [];
-            var length = projectList.length;
+            var length = list.length;
 
             if (length) {
                 for (var i = 0; i < length; i++) {
-                    var li = document.createElement('li');
-                    var a = document.createElement('a');
-                    a.textContent = projectList[i];
-                    a.addEventListener('click', function () {
-                        post({ type: 'get', user: user, key: this.textContent }, function (response) {
+                    var tr = $('<tr>');
+                    var td = $('<td>');
+                    var a = $('<a>');
+                    a.text(list[i]);
+                    a.click(function () {
+                        // TODO: Save the current roller coaster.
+                        var key = this.textContent;
+                        postJSON({ type: 'get', user: currentUser, key: key }, function (response) {
                             if (!response.error) {
-                                alert('Project Data:' + JSON.stringify(response.value));
+                                $('#project-name').text(key);
+                                $('#project-name-wrapper').show();
+                                hideMetroDialog('#file-open-dialog');
+                                // TODO: Load new roller coaster
                             } else {
                                 alert(response.error);
                             }
                         });
                     });
-                    li.appendChild(a);
-                    li.appendChild(document.createTextNode(' ('));
-                        a = document.createElement('a');
-                        a.textContent = 'delete';
-                        a.addEventListener('click', function () {
-                            if (confirm('Are you sure?')) {
-                                post({ type: 'set', user: user, key: this.previousSibling.previousSibling.textContent }, function (response) {
-                                    refreshProjectList();
-                                });
-                            }
-                        });
-                        li.appendChild(a);
-                        li.appendChild(document.createTextNode(')'));
-                        ul.appendChild(li);
-                    }
-                } else {
-                    var li = document.createElement('li');
-                    li.textContent = 'You have not created any projects yet :(';
-                        ul.appendChild(li);
-                    }
-                });
+                    td.append(a);
+                    tr.append(td);
+                    tr.append($('<td>'));
+                    tr.append($('<td>'));
+                    table.append(tr);
+                }
+            } else {
+                var tr = $('<tr>');
+                var td = $('<td>');
+                td.text('You have not created any projects yet.');
+                tr.append(td);
+                table.append(tr);
+            }
+        });
     }
 
-    function createUserInterface() {
-        onResize();
+    function FlyControls(camera, movementSpeed) {
+        var velocity = new _.Vector3();
+        var rotation = 0;
+        var totalRotation = (function () {
+            var direction = camera.getWorldDirection().multiplyScalar(-1);
+            return -Math.atan2(direction.x, direction.z);
+        }());
 
-        var loginButton = document.getElementsByTagName('fb:login-button');
-        loginButton.onlogin = checkLoginState;
+        $(window).keydown(function (e) {
+            var forward = camera.getWorldDirection();
 
-        var domElement = renderer.domElement;
-        var style = domElement.style;
+            switch (e.keyCode) {
+                case 39: /* Right */ velocity.x = 1; break;
+                case 37: /* Left */ velocity.x = -1; break;
+                case 40: /* Down */ velocity.z = 1; break;
+                case 38: /* Up */ velocity.z = -1; break;
+                case 82: /* R */ velocity.y = 1; break;
+                case 70: /* F */ velocity.y = -1; break;
+                case 87: /* W */ velocity.add(forward); break;
+                case 83: /* S */ velocity.sub(forward); break;
+                case 68: /* D */ rotation = Math.PI/360; break;
+                case 65: /* A */ rotation = -Math.PI/360; break;
+            }
+        });
 
-        style.position = 'fixed';
-        style.top = style.left = '0';
-        style.background = 'black';
+        $(window).keyup(function (e) {
+            switch (e.keyCode) {
+                case 39: /* Right */ case 37: /* Left */ velocity.x = 0; break;
+                case 40: /* Down */ case 38: /* Up */ velocity.z = 0; break;
+                case 82: /* R */ case 70: /* F */ velocity.y = 0; break;
+                case 87: /* W */ case 83: /* S */ velocity.set(0, 0, 0); break;
+                case 68: /* D */ case 65: /* A */ rotation = 0; break;
+            }
+        });
 
-        document.body.appendChild(renderer.domElement);
-        requestAnimationFrame(animate);
-        addEventListener('resize', onResize);
-        addEventListener('keydown', onKeyDown);
-        addEventListener('keyup', onKeyUp);
+        this.camera = camera;
 
-        refreshProjectList();
+        this.update = function () {
+            v1.copy(velocity)
+                .applyAxisAngle(upVector, totalRotation += rotation)
+                .multiplyScalar(movementSpeed);
 
-        var createNewButton = document.getElementById('create-new-button');
-        createNewButton.addEventListener('click', function () {
-            var n = 1;
-            while (projectList.indexOf('Project' + n) !== -1) n++;
-            var key = prompt('Project name:', 'Project' + n);
-            var request = {
-                type: 'set',
-                user: user,
-                key: key,
-                value: JSON.stringify({ dateCreated: Date.now() })
-            };
+            camera.position.add(v1);
+            camera.rotation.order = 'YXZ';
+            camera.rotation.y += rotation;
+        }
+    }
 
-            post(request, function (response) {
-                if (!response.error) {
-                    refreshProjectList();
+    function UserInterface() {
+        // User Settings
+        var currentUser = 'TestUser';
+        this.currentUser = currentUser;
+
+        function onNewButtonClicked() {
+            // TODO: Save the current roller coaster.
+            updateProjectList(function (list) {
+                var prefixString = 'Untitled '
+                var n = 1;
+                while (list.indexOf(prefixString + n) !== -1) n++;
+                var key = prefixString + n;
+
+                var request = {
+                    type: 'set',
+                    user: currentUser,
+                    key: key,
+                    value: JSON.stringify({ dateCreated: Date.now() })
+                };
+
+                postJSON(request, function (response) {
+                    if (!response.error) {
+                        $('#project-name').text(key);
+                        $('#project-name-wrapper').show();
+                        // TODO: Clear current roller coaster.
+                    } else {
+                        alert(response.error);
+                    }
+                });
+            })
+        }
+
+        function onOpenButtonClicked() {
+            updateProjectList(function () {
+                showMetroDialog('#file-open-dialog');
+            });
+        }
+
+        function onRenameButtonClicked() {
+            // TODO: Ensure that new name is not already taken.
+            // TODO: Delete current roller coaster.
+            // TODO: Save current roller coaster under new name.
+            showMetroDialog('#file-rename-dialog');
+        }
+
+        function onDeleteButtonClicked() {
+            postJSON({ type: 'set', user: currentUser, key: $('#project-name').text() }, function (response) {
+                if (typeof response.error === 'undefined') {
+                    $('#project-name-wrapper').hide();
                 } else {
                     alert(response.error);
                 }
             });
-        });
+        }
+
+        function onUndoButtonClicked() {
+            // TODO: Undo track piece.
+        }
+
+        function onRedoButtonClicked() {
+            // TODO: Redo track piece.
+        }
+
+        function onOptionsButtonClicked() {
+            showMetroDialog('#options-dialog');
+        }
+
+        function onOptionsDialogSaveButtonClicked() {
+            var newValue = $('#options-dialog-antialias').is(':checked');
+            if (newValue != this.currentAntialiasValue)
+                createRenderer({ antialias: this.currentAntialiasValue = newValue });
+            hideMetroDialog('#options-dialog');
+        }
+
+        function onPlayButtonClicked() {
+            var text = $('#play-button > .text');
+            text.text({ Play: 'Stop', Stop: 'Play' }[text.text()]);
+            $('#play-button > .icon').toggleClass('mif-play').toggleClass('mif-stop');
+            // TODO: Play the roller coaster.
+        }
+
+        var yawSliderValue, pitchSliderValue, lengthSliderValue;
+
+        function onCreateButtonClicked() {
+            var yaw = window.parseInt($('#yaw-slider > .slider-hint').text()) * Math.PI / 180;
+            var pitch = window.parseInt($('#pitch-slider > .slider-hint').text()) * Math.PI / 180;
+            var length = window.parseInt($('#length-slider > .slider-hint').text());
+
+            coasterGeo.removeAttribute('position');
+            coasterGeo.removeAttribute('normal');
+            coasterGeo.removeAttribute('color');
+            liftersGeo.removeAttribute('position');
+            liftersGeo.removeAttribute('normal');
+            shadowGeo.removeAttribute('position');
+
+            curve = new EntireCurve('add', pitch, yaw, length);
+            app.updateRollerCoaster();
+        }
+
+        // TODO: Try to load this from localstorage.
+        var antialias = this.currentAntialiasValue = screen.width * screen.height <= 1920 * 1080
+        $('#options-dialog-antialias').prop('checked', antialias);
+
+        $('#project-name').click(onRenameButtonClicked);
+        $('#file-new-button').click(onNewButtonClicked)
+        $('#file-open-button').click(onOpenButtonClicked);
+        $('#file-rename-button').click(onRenameButtonClicked);
+        $('#file-rename-ok-button').click(function () {});
+        $('#file-delete-button').click(onDeleteButtonClicked);
+        $('#edit-undo-button').click(onUndoButtonClicked);
+        $('#edit-redo-button').click(onRedoButtonClicked);
+        $('#options-button').click(onOptionsButtonClicked);
+        $('#options-dialog-save-button').click(onOptionsDialogSaveButtonClicked);
+        $('#play-button').click(onPlayButtonClicked);
+        $('#create-button').click(onCreateButtonClicked);
+        $('#fb-login-button').onlogin = checkLoginState;
     }
 
     function createQuad(vertices, v1, v2, v3, v4) {
@@ -155,13 +283,21 @@ addEventListener('load', function () {
     function createCircleVertices(radius, n) {
         var vertices = [];
         for (var a = 0, inc = Math.PI * 2 / n; a < Math.PI * 2; a += inc)
-            vertices.push(new $.Vector3(Math.sin(a) * radius, Math.cos(a) * radius, 0));
+            vertices.push(new _.Vector3(Math.sin(a) * radius, Math.cos(a) * radius, 0));
         return vertices;
     }
 
     function Curve(ox, oy, oz, p, y, l, i, yi) {
-        var point = new $.Vector3();
-        var tangent = new $.Vector3();
+        var point = new _.Vector3();
+        var tangent = new _.Vector3();
+
+        this.getPitch = function () {
+            return p + yi;
+        }
+
+        this.getYaw = function () {
+            return y + i + 1e-10;
+        }
 
         this.getPointAt = function (t) {
             return point.set(
@@ -190,23 +326,20 @@ addEventListener('load', function () {
         };
     }
 
-    function EntireCurve() {
-        var allCurves = [];
-
-        var point = new $.Vector3();
-        var tangent = new $.Vector3();
+    function EntireCurve(updateType, p, y, l) {
+        var point = new _.Vector3();
+        var tangent = new _.Vector3();
 
         this.curves = (function () {
-            //coaster.push({1, 1, 1, 0, 0, 10, 0, Math.PI / 6});
-
-            var c = new Curve(5, 5, 5, 0, 0, 10, 0, Math.PI / 6);
-            var lastPoint = c.getPointAt(1);
-            allCurves.push(c);
-            
-            for (var i = 0; i < currentCurves; i++) {
-                var d = new Curve(lastPoint.x / 20, lastPoint.y / 20, lastPoint.z / 20, 0, 0, 4, 0, 0.1);
-                lastPoint = d.getPointAt(1);
-                allCurves.push(d);
+            if (updateType === 'add' && allCurves.length !== 0) {
+                var lastCurve = allCurves[allCurves.length - 1];
+                var last = lastCurve.getPointAt(1);
+                allCurves.push(new Curve(last.x / 20, last.y / 20, last.z / 20, p, y, l, lastCurve.getPitch(), lastCurve.getYaw()));
+            } else if (updateType === 'remove') {
+                if (allCurves.length > 1)
+                    allCurves.pop();
+            } else {
+                allCurves = [ new Curve(2, 2, 2, 0, 0, 5, 0, 1e-10) ];
             }
 
             return allCurves;
@@ -214,44 +347,42 @@ addEventListener('load', function () {
 
         this.getPointAt = function (t) {
             var numCurves = this.curves.length;
-
-            return this.curves[(t == 1 ? (numCurves - 1) : Math.floor(t * numCurves))].getPointAt(t * numCurves - Math.floor(t * numCurves));
+            return this.curves[(t == 1 ? (numCurves - 1) : Math.floor(t * numCurves))]
+                .getPointAt(t * numCurves - Math.floor(t * numCurves));
         };
 
         this.getTangentAt = function (t) {
             var delta = 0.0001;
-
             return tangent.copy(this.getPointAt(Math.min(1, t + delta)))
             .sub(this.getPointAt(Math.max(0, t - delta))).normalize();
         }
     }
 
     function RollerCoasterGeometry(size) {
-        $.BufferGeometry.call(this);
+        _.BufferGeometry.call(this);
 
-        var color1 = new $.Vector3(0.8, 0.8, 0.8);
-        var color2 = new $.Vector3(0.8, 0.8, 0);
+        var color1 = new _.Vector3(0.8, 0.8, 0.8);
+        var color2 = new _.Vector3(0.8, 0.8, 0);
 
         var triangle = [
-        new $.Vector3(-2.25, 0, 0),
-        new $.Vector3(0, -0.5, 0),
-        new $.Vector3(0, -1.75, 0),
-        new $.Vector3(0, -0.5, 0),
-        new $.Vector3(2.25, 0, 0),
-        new $.Vector3(0, -1.75, 0)
+            new _.Vector3(-2.25, 0, 0),
+            new _.Vector3(0, -0.5, 0),
+            new _.Vector3(0, -1.75, 0),
+            new _.Vector3(0, -0.5, 0),
+            new _.Vector3(2.25, 0, 0),
+            new _.Vector3(0, -1.75, 0)
         ];
 
         var vertices = [];
         var normals = [];
         var colors = [];
-        var up = new $.Vector3(0, 1, 0);
-        var forward = new $.Vector3();
-        var right = new $.Vector3();
-        var offset = new $.Vector3();
-        var quaternion = new $.Quaternion();
-        var prevQuaternion = new $.Quaternion();
-        prevQuaternion.setFromAxisAngle(up, Math.PI / 2);
-        var point = new $.Vector3();
+        var forward = new _.Vector3();
+        var right = new _.Vector3();
+        var offset = new _.Vector3();
+        var quaternion = new _.Quaternion();
+        var prevQuaternion = new _.Quaternion();
+        prevQuaternion.setFromAxisAngle(upVector, Math.PI / 2);
+        var point = new _.Vector3();
         var prevPoint = curve.getPointAt(0).clone();
         var circle1 = createCircleVertices(0.6, 5);
         var circle2 = createCircleVertices(0.25, 5);
@@ -299,13 +430,13 @@ addEventListener('load', function () {
             createRepeated(colors, color, n * 6);
         }
 
-        for (var i = 1; i <= size; i++) {
+        for (var i = 1; i < size; i++) {
             point.copy(curve.getPointAt(i / size));
-            up.set(0, 1, 0);
+            v1.set(0, 1, 0);
             forward.subVectors(point, prevPoint).normalize();
-            right.crossVectors(up, forward).normalize();
-            up.crossVectors(forward, right);
-            quaternion.setFromAxisAngle(up, Math.atan2(forward.x, forward.z));
+            right.crossVectors(v1, forward).normalize();
+            v1.crossVectors(forward, right);
+            quaternion.setFromAxisAngle(v1, Math.atan2(forward.x, forward.z));
 
             drawShape(triangle, color2);
             extrudeShape(circle1, offset.set(0, -1.25, 0), color2);
@@ -316,26 +447,25 @@ addEventListener('load', function () {
             prevQuaternion.copy(quaternion);
         }
 
-        this.addAttribute('position', new $.BufferAttribute(new Float32Array(vertices), 3));
-        this.addAttribute('normal', new $.BufferAttribute(new Float32Array(normals), 3));
-        this.addAttribute('color', new $.BufferAttribute(new Float32Array(colors), 3));
+        this.addAttribute('position', new _.BufferAttribute(new Float32Array(vertices), 3));
+        this.addAttribute('normal', new _.BufferAttribute(new Float32Array(normals), 3));
+        this.addAttribute('color', new _.BufferAttribute(new Float32Array(colors), 3));
     }
 
     function RollerCoasterLiftersGeometry(size) {
-        $.BufferGeometry.call(this);
+        _.BufferGeometry.call(this);
 
-        var tube1 = [new $.Vector3(0, 0.5, -0.5), new $.Vector3(0, 0.5, 0.5), new $.Vector3(0, -0.5, 0)];
-        var tube2 = [new $.Vector3(-0.5, 0, 0.5), new $.Vector3(-0.5, 0, -0.5), new $.Vector3(0.5, 0, 0)];
-        var tube3 = [new $.Vector3(0.5, 0, -0.5), new $.Vector3(0.5, 0, 0.5), new $.Vector3(-0.5, 0, 0)];
+        var tube1 = [new _.Vector3(0, 0.5, -0.5), new _.Vector3(0, 0.5, 0.5), new _.Vector3(0, -0.5, 0)];
+        var tube2 = [new _.Vector3(-0.5, 0, 0.5), new _.Vector3(-0.5, 0, -0.5), new _.Vector3(0.5, 0, 0)];
+        var tube3 = [new _.Vector3(0.5, 0, -0.5), new _.Vector3(0.5, 0, 0.5), new _.Vector3(-0.5, 0, 0)];
 
         var vertices = [];
         var normals = [];
-        var quaternion = new $.Quaternion();
-        var up = new $.Vector3(0, 1, 0);
-        var point = new $.Vector3();
-        var tangent = new $.Vector3();
-        var fromPoint = new $.Vector3();
-        var toPoint = new $.Vector3();
+        var quaternion = new _.Quaternion();
+        var point = new _.Vector3();
+        var tangent = new _.Vector3();
+        var fromPoint = new _.Vector3();
+        var toPoint = new _.Vector3();
 
         function extrudeShape(shape) {
             for (var j = 0, n = shape.length; j < n; j++) {
@@ -356,11 +486,11 @@ addEventListener('load', function () {
             }
         }
 
-        for (var i = 1; i <= size; i++) {
+        for (var i = 0; i <= size; i++) {
             point.copy(curve.getPointAt(i / size));
             tangent.copy(curve.getTangentAt(i / size));
 
-            quaternion.setFromAxisAngle(up, Math.atan2(tangent.x, tangent.z));
+            quaternion.setFromAxisAngle(upVector, Math.atan2(tangent.x, tangent.z));
 
             if (point.y > 100) {
                 fromPoint.set(-7.5, -3.5, 0).applyQuaternion(quaternion).add(point);
@@ -381,25 +511,25 @@ addEventListener('load', function () {
             }
         }
 
-        this.addAttribute('position', new $.BufferAttribute(new Float32Array(vertices), 3));
-        this.addAttribute('normal', new $.BufferAttribute(new Float32Array(normals), 3));
+        this.addAttribute('position', new _.BufferAttribute(new Float32Array(vertices), 3));
+        this.addAttribute('normal', new _.BufferAttribute(new Float32Array(normals), 3));
     }
 
     function RollerCoasterShadowGeometry(size) {
-        $.BufferGeometry.call(this);
+        // TODO: Project shadow onto landscape.
+        _.BufferGeometry.call(this);
 
         var vertices = [];
-        var up = new $.Vector3(0, 1, 0);
-        var forward = new $.Vector3();
-        var quaternion = new $.Quaternion();
-        var prevQuaternion = new $.Quaternion().setFromAxisAngle(up, Math.PI / 2);
-        var point = new $.Vector3();
+        var forward = new _.Vector3();
+        var quaternion = new _.Quaternion();
+        var prevQuaternion = new _.Quaternion().setFromAxisAngle(upVector, Math.PI / 2);
+        var point = new _.Vector3();
         var prevPoint = curve.getPointAt(0).clone().setY(0);
 
-        for (var i = 1; i <= size; i++) {
+        for (var i = 1; i < size; i++) {
             point.copy(curve.getPointAt(i / size)).setY(0);
             forward.subVectors(point, prevPoint);
-            quaternion.setFromAxisAngle(up, Math.atan2(forward.x, forward.z));
+            quaternion.setFromAxisAngle(upVector, Math.atan2(forward.x, forward.z));
 
             v1.set(-3, 0, 0).applyQuaternion(quaternion).add(point);
             v2.set(3, 0, 0).applyQuaternion(quaternion).add(point);
@@ -411,11 +541,11 @@ addEventListener('load', function () {
             prevQuaternion.copy(quaternion);
         }
 
-        this.addAttribute('position', new $.BufferAttribute(new Float32Array(vertices), 3));
+        this.addAttribute('position', new _.BufferAttribute(new Float32Array(vertices), 3));
     }
 
     function SkyGeometry(count) {
-        $.BufferGeometry.call(this);
+        _.BufferGeometry.call(this);
 
         var vertices = [];
 
@@ -434,15 +564,15 @@ addEventListener('load', function () {
             vertices.push(x - size, y, z + size);
         }
 
-        this.addAttribute('position', new $.BufferAttribute(new Float32Array(vertices), 3));
+        this.addAttribute('position', new _.BufferAttribute(new Float32Array(vertices), 3));
     }
 
     function TreesGeometry(landscape) {
-        $.BufferGeometry.call(this);
+        _.BufferGeometry.call(this);
 
         var vertices = [];
         var colors = [];
-        var raycaster = new $.Raycaster();
+        var raycaster = new _.Raycaster();
         raycaster.ray.direction.set(0, -1, 0);
 
         for (var i = 0; i < 2000; i++) {
@@ -470,184 +600,187 @@ addEventListener('load', function () {
                 colors.push(0.2 + random, 0.4 + random, 0);
         }
 
-        this.addAttribute('position', new $.BufferAttribute(new Float32Array(vertices), 3));
-        this.addAttribute('color', new $.BufferAttribute(new Float32Array(colors), 3));
+        this.addAttribute('position', new _.BufferAttribute(new Float32Array(vertices), 3));
+        this.addAttribute('color', new _.BufferAttribute(new Float32Array(colors), 3));
     }
 
-    function createEnvironment() {
-        // Land
-        var geometry = new $.PlaneGeometry(5000, 5000, 15, 15);
-        geometry.applyMatrix(new $.Matrix4().makeRotationX(-Math.PI / 2));
+    function createRenderer() {
+        if (!isUndefined(renderer)) removeElement(renderer.domElement);
 
-        for (var i = 0; i < geometry.vertices.length; i++) {
-            var vertex = geometry.vertices[i];
-            vertex.x += Math.random() * 100 - 50;
-            vertex.y = Math.random() * Math.max(0, (vertex.distanceTo(scene.position) / 5) - 250);
-            vertex.z += Math.random() * 100 - 50;
-        }
+        renderer = new _.WebGLRenderer({ antialias: false });
+        renderer.setClearColor(0xd0d0ff);
+        renderer.setPixelRatio(devicePixelRatio);
 
-        geometry.computeFaceNormals();
-
-        var mesh = new $.Mesh(geometry, new $.MeshLambertMaterial({
-            color: 0x407000,
-            shading: $.FlatShading
-        }));
-        scene.add(mesh);
-
-        // Trees
-        scene.add(new $.Mesh(
-            new TreesGeometry(mesh),
-            new $.MeshBasicMaterial({
-                side: $.DoubleSide,
-                vertexColors: $.VertexColors
-            })));
-
-        // Sky
-        scene.add(new $.Mesh(
-            new SkyGeometry(20),
-            new $.MeshBasicMaterial({
-                color: 0xffffff
-            })));
+        $(window).trigger('resize');
+        $('body').append(renderer.domElement);
     }
 
-    function createRollerCoaster() {
-        scene.add(new $.Mesh(
-            new RollerCoasterGeometry(35),
-            new $.MeshStandardMaterial({
-                roughness: 0.1,
-                metalness: 0,
-                vertexColors: $.VertexColors
-            })));
+    function App() {
+        function createEnvironment(scene) {
+            // Land
+            var geometry = new _.PlaneGeometry(5000, 5000, 15, 15);
+            geometry.applyMatrix(new _.Matrix4().makeRotationX(-Math.PI / 2));
 
-        var mesh = new $.Mesh(
-            new RollerCoasterLiftersGeometry(10 + currentCurves * 10),
-            new $.MeshStandardMaterial({
-                roughness: 0.1,
-                metalness: 0
+            for (var i = 0; i < geometry.vertices.length; i++) {
+                var vertex = geometry.vertices[i];
+                vertex.x += Math.random() * 100 - 50;
+                vertex.y = Math.random() * Math.max(0, (vertex.distanceTo(scene.position) / 5) - 250);
+                vertex.z += Math.random() * 100 - 50;
+            }
+
+            geometry.computeFaceNormals();
+
+            var mesh = new _.Mesh(geometry, new _.MeshLambertMaterial({
+                color: 0x407000,
+                shading: _.FlatShading
             }));
-        mesh.position.y = 1;
-        scene.add(mesh);
+            scene.add(mesh);
 
-        mesh = new $.Mesh(
-            new RollerCoasterShadowGeometry(20),
-            new $.MeshBasicMaterial({
-                color: 0x000000,
-                opacity: 0.1,
-                depthWrite: false,
-                transparent: true
-            }));
-        mesh.position.y = 1;
-        scene.add(mesh);
-    }
+            // Trees
+            scene.add(new _.Mesh(
+                new TreesGeometry(mesh),
+                new _.MeshBasicMaterial({
+                    side: _.DoubleSide,
+                    vertexColors: _.VertexColors
+                })));
 
-    function onResize() {
-        camera.aspect = innerWidth / innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(innerWidth, innerHeight);
-    }
+            // Sky
+            scene.add(new _.Mesh(
+                new SkyGeometry(20),
+                new _.MeshBasicMaterial({
+                    color: 0xffffff
+                })));
+        }
 
-    var cameraVelocity = new $.Vector3(); 
-    var cameraRotation = 0;
-    var quaternion = new $.Quaternion();
+        function createRollerCoaster(scene) {
+            scene.add(new _.Mesh(
+                coasterGeo = new RollerCoasterGeometry(35),
+                new _.MeshStandardMaterial({
+                    roughness: 0.1,
+                    metalness: 0,
+                    vertexColors: _.VertexColors
+                })));
 
-    function updateCamera() {
-        var tmp = cameraVelocity.clone().normalize().multiplyScalar(10);
-        camera.position.add(tmp);
-        camera.rotation.order = 'YXZ';
-        camera.rotation.y += cameraRotation;
-    }
+            var mesh = new _.Mesh(
+                liftersGeo = new RollerCoasterLiftersGeometry(allCurves.length * 2),
+                new _.MeshStandardMaterial({
+                    roughness: 0.1,
+                    metalness: 0
+                }));
+            mesh.position.y = 1;
+            scene.add(mesh);
 
-    function animate(time) {
-        requestAnimationFrame(animate);
-/*
-        var delta = time - last;
-        last = time;
+            mesh = new _.Mesh(
+                shadowGeo = new RollerCoasterShadowGeometry(allCurves.length * 2),
+                new _.MeshBasicMaterial({
+                    color: 0x000000,
+                    opacity: 0.1,
+                    depthWrite: false,
+                    transparent: true
+                }));
+            mesh.position.y = 1;
+            scene.add(mesh);
+        }
 
-        progress = (progress + velocity * delta / 1000) % 1;
-        train.position.copy(curve.getPointAt(progress));
-        train.position.y += 3;
+        // XXX: Modifies globals: train, flyControls, ...
+        function createScene() {
+            train = new _.Object3D();
 
-        var tangent = curve.getTangentAt(progress);
-        velocity = Math.max(velocity - tangent.y * 0.000030, 0.0008);
-        train.lookAt(train.position.clone().add(tangent));
-        */
-        updateCamera();
-        renderer.render(scene, camera);
-    }
+            var camera = new _.PerspectiveCamera(40, innerWidth / innerHeight, 1, 5000);
+            camera.position.x = 0;
+            camera.position.y = 300;
+            camera.position.z = 300;
+            camera.lookAt(new _.Vector3(0, 0, 0));
 
-    function onKeyDown(e) {
-        var fwd = camera.getWorldDirection();
-        cameraVelocity.set(0, 0, 0);
-        switch (e.keyCode) {
-            // Height
-            case 82: /* R */ cameraVelocity.y = 1; break;
-            case 70: /* F */ cameraVelocity.y = -1; break;
+            flyControls = new FlyControls(camera, 10);
 
-            // Zoom In/Out
-            case 87: /* W */ cameraVelocity.add(fwd); break;
-            case 83: /* S */ cameraVelocity.sub(fwd); break;
+            var scene = new _.Scene();
+            scene.add(train);
+            scene.add(new _.HemisphereLight(0xfff0f0, 0x606066));
 
-            // Rotate Left/Right
-            case 68: /* D */ cameraRotation = Math.PI/360; break;
-            case 65: /* A */ cameraRotation = -Math.PI/360; break;
+            createEnvironment(scene);
+            createRollerCoaster(scene);
 
-            // Panning
-            case 39: /* Right */ cameraVelocity.x = 1; break;
-            case 37: /* Left */ cameraVelocity.x = -1; break;
-            case 40: /* Down */ cameraVelocity.z = 1; break;
-            case 38: /* Up */ cameraVelocity.z = -1; break;
+            $(window).resize(function () {
+                camera.aspect = innerWidth / innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(innerWidth, innerHeight);
+            });
 
-            //temporarily add new straight piece
-            case 74:        break;
+            return scene;
+        }
+
+        function animate(/* time */) {
+            window.requestAnimationFrame(animate);
+
+            /*
+            var delta = time - last;
+            last = time;
+
+            progress = (progress + velocity * delta / 1000) % 1;
+            train.position.copy(curve.getPointAt(progress));
+            train.position.y += 3;
+
+            var tangent = curve.getTangentAt(progress);
+            velocity = Math.max(velocity - tangent.y * 0.000030, 0.0008);
+            train.lookAt(train.position.clone().add(tangent));
+            */
+
+            flyControls.update();
+            renderer.render(scene, flyControls.camera);
+        }
+
+        // TODO: Make this instance variables.
+        curve = new EntireCurve();
+        scene = createScene();
+        userInterface = new UserInterface();
+        createRenderer({ antialias: userInterface.currentAntialiasValue });
+
+        this.updateRollerCoaster = function () {
+            createRollerCoaster(scene);
+        }
+
+        this.run = function () {     
+            window.requestAnimationFrame(animate);
+            $('body').show();
         }
     }
 
-    function onKeyUp(e) {
-        switch (e.keyCode) {
-            case 82: /* R */ case 70: /* F */
-            cameraVelocity.y = 0; break;
-
-            // Zoom In/Out
-            case 87: /* W */ case 83: /* S */
-            cameraVelocity.set(0, 0, 0); break;
-
-            // Rotation Left/Right
-            case 68: /* D */ case 65: /* A */
-            cameraRotation = 0; break;
-
-            // Panning
-            case 39: /* Right */ case 37: /* Left */
-            cameraVelocity.x = 0; break;
-            case 40: /* Down */ case 38: /* Up */
-            cameraVelocity.z = 0; break;
-        }
+    function importGlobals() {
+        $ = window.$;
+        _ = window.THREE;
+        FB = window.FB;
+        JSON = window.JSON;
+        Math = window.Math;
+        document = window.document;
     }
 
-    function initialize() {
+    function initializeGeometryPrototypes() {
         RollerCoasterGeometry.prototype =
         RollerCoasterLiftersGeometry.prototype =
         RollerCoasterShadowGeometry.prototype =
         SkyGeometry.prototype =
-        TreesGeometry.prototype = $.BufferGeometry.prototype;
-
-        renderer = new $.WebGLRenderer({ antialias: false });
-        renderer.setClearColor(0xd0d0ff);
-        renderer.setPixelRatio(devicePixelRatio);
-        scene = new $.Scene();
-        camera = new $.PerspectiveCamera(40, innerWidth / innerHeight, 1, 5000);
-        camera.position.x = 1000;
-        camera.position.y = 1000;
-        camera.position.z = 1000;
-        train = new $.Object3D();
-        camera.lookAt(train.position);
-        scene.add(train);
-        scene.add(new $.HemisphereLight(0xfff0f0, 0x606066));
-        curve = new EntireCurve();
-
-        createEnvironment();
-        createRollerCoaster();
-        createUserInterface();
+        TreesGeometry.prototype = _.BufferGeometry.prototype;
     }
 
-    initialize();
-});
+    function onWindowLoad() {
+        importGlobals();
+        initializeGeometryPrototypes();
+
+        upVector = new _.Vector3(0, 1, 0);
+        v1 = new _.Vector3();
+        v2 = new _.Vector3();
+        v3 = new _.Vector3();
+        v4 = new _.Vector3();
+
+        app = new App();
+        app.run();
+    }
+
+    function main() {
+        window.fbAsyncInit = fbAsyncInit;
+        window.onload = onWindowLoad;
+    }
+
+    main();
+}(window));
