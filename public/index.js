@@ -2,9 +2,8 @@
     'use strict';
 
     // TODO: Add globals for $window, $body, ...
-    var $, $window, _, FB, JSON, Math, document, app, renderer, scene,
-        curve, coasterGeo, liftersGeo, shadowGeo,
-        train, /* last = 0, velocity = 0, progress = 0, */
+    var $, $window, _, FB, JSON, Math, document,
+        app, renderer, scene, curve, train,
         userInterface, flyControls, upVector, v1, v2, v3, v4;
 
     function fbAsyncInit() {
@@ -52,56 +51,9 @@
         });
     }
 
-    function updateProjectList(callback) {
-        var currentUser = userInterface.currentUser;
-        var table = $('#project-list');
-        table.html('<tr><th>Filename</th><th>Last Modified</th><th>Size</th></tr>');
-
-        postJSON({ type: 'list', user: currentUser }, function (response) {
-            var list = response.value || [];
-            if (!isUndefined(callback))
-                callback(list);
-
-            var length = list.length;
-
-            if (length) {
-                for (var i = 0; i < length; i++) {
-                    var tr = $('<tr>');
-                    var td = $('<td>');
-                    var a = $('<a>');
-                    a.text(list[i]);
-                    a.click(function () {
-                        // TODO: Save the current roller coaster.
-                        var key = this.textContent;
-                        postJSON({ type: 'get', user: currentUser, key: key }, function (response) {
-                            if (!response.error) {
-                                $('#project-name').text(key);
-                                $('#project-name-wrapper').show();
-                                hideMetroDialog('#file-open-dialog');
-                                // TODO: Load new roller coaster
-                            } else {
-                                alert(response.error);
-                            }
-                        });
-                    });
-                    td.append(a);
-                    tr.append(td);
-                    tr.append($('<td>'));
-                    tr.append($('<td>'));
-                    table.append(tr);
-                }
-            } else {
-                var tr = $('<tr>');
-                var td = $('<td>');
-                td.text('You have not created any projects yet.');
-                tr.append(td);
-                table.append(tr);
-            }
-        });
-    }
-
     function FlyControls(camera, movementSpeed) {
         var velocity, rotation, totalRotation, borderSize;
+        console.log(camera.getWorldDirection().multiplyScalar(-1));
 
         function getCameraXZRotation() {
             var direction = camera.getWorldDirection().multiplyScalar(-1);
@@ -126,8 +78,8 @@
                 case 38: /* Up */ velocity.z = -1; break;
                 case 82: /* R */ velocity.y = 1; break;
                 case 70: /* F */ velocity.y = -1; break;
-                case 87: /* W */ velocity.add(forward); break;
-                case 83: /* S */ velocity.sub(forward); break;
+                case 87: /* W */ velocity = forward.clone(); break;
+                case 83: /* S */ velocity = forward.clone().multiplyScalar(-1); break;
                 case 68: /* D */ rotation = Math.PI/180; break;
                 case 65: /* A */ rotation = -Math.PI/180; break;
             }
@@ -176,40 +128,52 @@
     }
 
     function UserInterface() {
-        // User Settings
-        var currentUser = 'TestUser';
-        this.currentUser = currentUser;
 
         function onNewButtonClicked() {
             // TODO: Save the current roller coaster.
-            updateProjectList(function (list) {
-                var prefixString = 'Untitled '
-                var n = 1;
-                while (list.indexOf(prefixString + n) !== -1) n++;
-                var key = prefixString + n;
-
-                var request = {
-                    type: 'set',
-                    user: currentUser,
-                    key: key,
-                    value: JSON.stringify({ dateCreated: Date.now() })
-                };
-
-                postJSON(request, function (response) {
-                    if (!response.error) {
-                        $('#project-name').text(key);
-                        $('#project-name-wrapper').show();
-                        // TODO: Clear current roller coaster.
-                    } else {
-                        alert(response.error);
-                    }
-                });
-            })
+            app.createNewProject(function (name) {
+                $('#project-name').text(name);
+                $('#project-name-wrapper').show();
+                // TODO: Clear current roller coaster.
+            }, alert);
         }
 
         function onOpenButtonClicked() {
-            updateProjectList(function () {
+            var table = $('#project-list');
+            table.html('<tr><th>Filename</th><th>Last Modified</th><th>Size</th></tr>');
+
+            app.getProjectList(function (list) {
                 showMetroDialog('#file-open-dialog');
+
+                var length = list.length;
+
+                if (length) {
+                    for (var i = 0; i < length; i++) {
+                        var tr = $('<tr>');
+                        var td = $('<td>');
+                        var a = $('<a>');
+                        a.text(list[i]);
+                        a.click(function () {
+                            var name = this.textContent;
+                            app.loadProject(name, function (value) {
+                                $('#project-name').text(name);
+                                $('#project-name-wrapper').show();
+                                hideMetroDialog('#file-open-dialog');
+                            }, alert);
+                        });
+                        td.append(a);
+                        tr.append(td);
+                        tr.append($('<td>'));
+                        tr.append($('<td>'));
+                        table.append(tr);
+                    }
+                } else {
+                    var tr = $('<tr>');
+                    var td = $('<td>');
+                    td.text('You have not created any projects yet.');
+                    tr.append(td);
+                    table.append(tr);
+                }
             });
         }
 
@@ -221,21 +185,21 @@
         }
 
         function onDeleteButtonClicked() {
-            postJSON({ type: 'set', user: currentUser, key: $('#project-name').text() }, function (response) {
-                if (typeof response.error === 'undefined') {
-                    $('#project-name-wrapper').hide();
-                } else {
-                    alert(response.error);
-                }
-            });
+            app.deleteCurrentProject(function () {
+                $('#project-name-wrapper').hide();
+            }, alert);
         }
 
         function onUndoButtonClicked() {
-            // TODO: Undo track piece.
+            app.deleteRollerCoaster();
+            curve.undo();
+            app.updateRollerCoaster();
         }
 
         function onRedoButtonClicked() {
-            // TODO: Redo track piece.
+            app.deleteRollerCoaster();
+            curve.redo();
+            app.updateRollerCoaster();
         }
 
         function onOptionsButtonClicked() {
@@ -256,21 +220,17 @@
             // TODO: Play the roller coaster.
         }
 
-        var yawSliderValue, pitchSliderValue, lengthSliderValue;
+        function getSliderValue(selector) {
+            return window.parseInt($(selector + ' > .slider-hint').text());
+        }
 
         function onCreateButtonClicked() {
-            var yaw = window.parseInt($('#yaw-slider > .slider-hint').text()) * Math.PI / 180;
-            var pitch = window.parseInt($('#pitch-slider > .slider-hint').text()) * Math.PI / 180;
-            var length = window.parseInt($('#length-slider > .slider-hint').text());
+            var yaw = getSliderValue('#yaw-slider') * Math.PI / 180;
+            var pitch = getSliderValue('#pitch-slider') * Math.PI / 180;
+            var length = getSliderValue('#length-slider');
 
-            coasterGeo.removeAttribute('position');
-            coasterGeo.removeAttribute('normal');
-            coasterGeo.removeAttribute('color');
-            liftersGeo.removeAttribute('position');
-            liftersGeo.removeAttribute('normal');
-            shadowGeo.removeAttribute('position');
-
-            curve = new EntireCurve(curve, 'add', pitch, yaw, length);
+            app.deleteRollerCoaster();
+            curve.add(pitch, yaw, length);
             app.updateRollerCoaster();
         }
 
@@ -322,11 +282,15 @@
 
         this.getPitch = function () {
             return p + yi;
-        }
+        };
 
         this.getYaw = function () {
             return y + i + 1e-10;
-        }
+        };
+
+        this.getLength = function () {
+            return l;
+        };
 
         this.getPointAt = function (t) {
             return point.set(
@@ -351,24 +315,49 @@
             var delta = 0.0001;
 
             return tangent.copy(this.getPointAt(Math.min(1, t + delta)))
-            .sub(this.getPointAt(Math.max(0, t - delta))).normalize();
+                .sub(this.getPointAt(Math.max(0, t - delta))).normalize();
         };
     }
 
-    function EntireCurve(entireCurve, updateType, p, y, l) {
+    function CurveCollection(firstCurve) {
+        this.length = 1;
+        this.sum = firstCurve ? firstCurve.getLength() : 5;
         var point = new _.Vector3();
         var tangent = new _.Vector3();
-        var curves = this.curves = (entireCurve ? entireCurve.curves : [ new Curve(2, 2, 2, 0, 0, 5, 0, 1e-10) ]);
-        var length = curves.length;
+        var curves = [ firstCurve || new Curve(2, 2, 2, 0, 0, 5, 0, 1e-10) ];
+        var redoBuffer = [];
 
-        if (updateType === 'add' && length !== 0) {
-            var lastCurve = curves[length - 1];
-            var last = lastCurve.getPointAt(1);
-            curves.push(new Curve(last.x / 20, last.y / 20, last.z / 20, p, y, l, lastCurve.getPitch(), lastCurve.getYaw()));
-        } else if (updateType === 'remove') {
-            if (length > 1)
-                curves.pop();
-        }
+        this.add = function (p, y, l) {
+            if (length !== 0) {
+                redoBuffer = [];
+                var lastCurve = curves[curves.length - 1];
+                var last = lastCurve.getPointAt(1);
+                curves.push(new Curve(last.x / 20, last.y / 20, last.z / 20, p, y, l, lastCurve.getPitch(), lastCurve.getYaw()));
+                this.length++;
+                this.sum += l;
+                console.log(this.sum);
+            }
+        };
+        
+        this.undo = function () {
+            if (curves.length > 1) {
+                var c = curves.pop();
+                this.sum -= c.getLength();
+                redoBuffer.push(c);
+                this.length--;
+                console.log(this.sum);
+            }
+        };
+
+        this.redo = function () {
+            if (redoBuffer.length > 0) {
+                var c = redoBuffer.pop();
+                this.sum += c.getLength();
+                curves.push(c);
+                this.length++;
+                console.log(this.sum);
+            }
+        };
 
         this.getPointAt = function (t) {
             var length = curves.length;
@@ -380,8 +369,44 @@
             var delta = 0.0001;
             return tangent.copy(this.getPointAt(Math.min(1, t + delta)))
                 .sub(this.getPointAt(Math.max(0, t - delta))).normalize();
-        }
+        };
+
+        this.serialize = function () {
+            var a = [];
+            curves.forEach(function (c) {
+                a.push([c.getPitch(), c.getYaw(), c.getLength()]);
+            });
+            return {
+                modified: Date.now(),
+                format: [ 'pitch', 'yaw', 'length' ],
+                curves: a
+            };
+        };
     }
+
+    CurveCollection.parse = function (obj) {
+        var objFormat = obj.format;
+        var objCurves = obj.curves;
+
+        if (isUndefined(objFormat) || isUndefined(objCurves))
+            return null;
+
+        var indices = {};
+        objFormat.forEach(function (s, i) {
+            indices[s] = i;
+        });
+
+        var pitch = indices.pitch;
+        var yaw = indices.yaw;
+        var length = indices.length;
+
+        var curves = new CurveCollection(obj.curves.shift());
+        objCurves.forEach(function (c) {
+            curves.add(c[pitch], c[yaw], c[length]);
+        });
+
+        return curves;
+    };
 
     function RollerCoasterGeometry(size) {
         _.BufferGeometry.call(this);
@@ -511,7 +536,7 @@
             }
         }
 
-        for (var i = 0; i <= size; i++) {
+        for (var i = 0; i < size; i++) {
             point.copy(curve.getPointAt(i / size));
             tangent.copy(curve.getTangentAt(i / size));
 
@@ -641,6 +666,12 @@
     }
 
     function App() {
+        var coasterGeo,
+            liftersGeo,
+            shadowGeo,
+            currentUser = 'TestUser',
+            currentProjectName = null;
+
         function createEnvironment(scene) {
             // Land
             var geometry = new _.PlaneGeometry(5000, 5000, 15, 15);
@@ -678,10 +709,12 @@
         }
 
         function createRollerCoaster(scene) {
-            var length = curve.curves.length;
+            var length = curve.length;
+            var sum = curve.sum;
+            console.log('s: ' + sum);
 
             scene.add(new _.Mesh(
-                coasterGeo = new RollerCoasterGeometry(length * 10),
+                coasterGeo = new RollerCoasterGeometry(sum),
                 new _.MeshStandardMaterial({
                     roughness: 0.1,
                     metalness: 0,
@@ -689,7 +722,7 @@
                 })));
 
             var mesh = new _.Mesh(
-                liftersGeo = new RollerCoasterLiftersGeometry(length * 2),
+                liftersGeo = new RollerCoasterLiftersGeometry(10),
                 new _.MeshStandardMaterial({
                     roughness: 0.1,
                     metalness: 0
@@ -698,7 +731,7 @@
             scene.add(mesh);
 
             mesh = new _.Mesh(
-                shadowGeo = new RollerCoasterShadowGeometry(length * 10),
+                shadowGeo = new RollerCoasterShadowGeometry(sum),
                 new _.MeshBasicMaterial({
                     color: 0x000000,
                     opacity: 0.1,
@@ -707,6 +740,15 @@
                 }));
             mesh.position.y = 1;
             scene.add(mesh);
+        }
+
+        function deleteRollerCoaster() {
+            coasterGeo.removeAttribute('position');
+            coasterGeo.removeAttribute('normal');
+            coasterGeo.removeAttribute('color');
+            liftersGeo.removeAttribute('position');
+            liftersGeo.removeAttribute('normal');
+            shadowGeo.removeAttribute('position');
         }
 
         // XXX: Modifies globals: train, flyControls, ...
@@ -757,20 +799,113 @@
             renderer.render(scene, flyControls.camera);
         }
 
+        function saveIfNecessary(onsuccess, onerror) {
+            // TODO: Only save if the length of the curve is greater than one.
+            if (currentProjectName !== null) {
+                saveCurrentProject(onsuccess, onerror);
+            } else {
+                onsuccess();
+            }
+        }
+
+        function generateProjectName(prefixString, unavailableNames) {
+            var n = 1;
+            while (unavailableNames.indexOf(prefixString + n) !== -1) n++;
+            return prefixString + n;
+        }
+
+        function createNewProject(onsuccess, onerror) {
+            saveIfNecessary(function () {
+                getProjectList(function (list) {
+                    onsuccess(currentProjectName = generateProjectName('Untitled ', list));
+                }, onerror);
+            }, onerror);
+        }
+
+        function saveCurrentProject(onsuccess, onerror) {
+            alert(JSON.stringify(curve.serialize()));
+            postJSON({
+                type: 'set',
+                user: currentUser,
+                key: currentProjectName,
+                value: JSON.stringify(curve.serialize())
+            }, function (response) {
+                var error = response.error;
+                if (isUndefined(error)) {
+                    onsuccess();
+                } else {
+                    onerror(error);
+                }
+            });
+        }
+
+        function loadProject(name, onsuccess, onerror) {
+            saveIfNecessary(function () {
+                currentProjectName = name;
+                postJSON({
+                    type: 'get',
+                    user: currentUser,
+                    key: name
+                }, function (response) {
+                    var error = response.error;
+                    if (isUndefined(error)) {
+                        curve = CurveCollection.parse(response.value);
+                        onsuccess();
+                    } else {
+                        onerror(error);
+                    }
+                });
+            }, onerror);
+        }
+
+        function getProjectList(onsuccess, onerror) {
+            postJSON({ type: 'list', user: currentUser }, function (response) {
+                var error = response.error;
+                if (isUndefined(error))
+                    onsuccess(response.value || []);
+                else if (error === 'Invalid Request: User not found.')
+                    onsuccess([]);
+                else
+                    onerror(error)
+            });
+        }
+
+        function deleteCurrentProject(onsuccess, onerror) {
+            postJSON({
+                type: 'set',
+                user: currentUser,
+                key: currentProjectName
+            }, function (response) {
+                var error = response.error;
+                if (isUndefined(error)) {
+                    currentProjectName = null;
+                    onsuccess();
+                } else {
+                    onerror(error);
+                }
+            });
+        }
+
         // TODO: Make this instance variables.
-        curve = new EntireCurve();
+        curve = new CurveCollection();
         scene = createScene();
         userInterface = new UserInterface();
         createRenderer({ antialias: userInterface.currentAntialiasValue });
 
+        this.createNewProject = createNewProject;
+        this.saveCurrentProject = saveCurrentProject;
+        this.deleteCurrentProject = deleteCurrentProject;
+        this.loadProject = loadProject;
+        this.getProjectList = getProjectList;
+        this.deleteRollerCoaster = deleteRollerCoaster;
         this.updateRollerCoaster = function () {
             createRollerCoaster(scene);
-        }
+        };
 
         this.run = function () {     
             window.requestAnimationFrame(animate);
             $('body').show();
-        }
+        };
     }
 
     function importGlobals() {
