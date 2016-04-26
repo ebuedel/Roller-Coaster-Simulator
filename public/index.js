@@ -222,12 +222,13 @@
 
         function onOpenButtonClicked() {
             var table = $('#project-list');
-            table.html('<tr><th>Filename</th><th>Last Modified</th><th>Size</th></tr>');
+            table.html('<thead><tr><th>Filename</th><th>Last Modified</th><th>Size</th></tr></thead>');
 
             app.getProjectList(function (list) {
                 showMetroDialog('#file-open-dialog');
 
                 var length = list.length;
+                var tbody = $('<tbody>');
 
                 if (length) {
                     for (var i = 0; i < length; i++) {
@@ -237,8 +238,8 @@
                         a.text(list[i]);
                         a.click(function () {
                             var name = this.textContent;
-                            app.loadProject(name, function (value) {
-                                setProjectNameLabel(value);
+                            app.loadProject(name, function () {
+                                setProjectNameLabel(name);
                                 hideMetroDialog('#file-open-dialog');
                             }, alert);
                         });
@@ -246,15 +247,17 @@
                         tr.append(td);
                         tr.append($('<td>'));
                         tr.append($('<td>'));
-                        table.append(tr);
+                        tbody.append(tr);
                     }
                 } else {
                     var tr = $('<tr>');
                     var td = $('<td>');
                     td.text('You have not created any projects yet.');
                     tr.append(td);
-                    table.append(tr);
+                    tbody.append(tr);
                 }
+
+                table.append(tbody);
             });
         }
 
@@ -355,6 +358,10 @@
             return V;
         }
 
+        this.getTangent = function () {
+            return T;
+        }
+
         this.getLength = function () {
             return L;
         }
@@ -438,18 +445,20 @@
         this.serialize = function () {
             var a = [];
             curves.forEach(function (c) {
-                a.push(c.getVector, c.getLength);
+                var t = c.getTangent();
+                console.log(t);
+                a.push([t.x, t.y, t.z, c.getLength()]);
             });
+            console.log(JSON.stringify(a));
             return {
                 modified: Date.now(),
-                //offset: curves[0].getOffset(),
                 curves: a
             };
         };
     }
 
     CurveCollection.parse = function (str) {
-        /*var obj;
+        var obj;
 
         try {
             obj = JSON.parse(str);
@@ -457,18 +466,15 @@
             return null;
         }
 
-        //FIX SERIALIZE
-
-
         var c = obj.curves.shift();
-        var curves = new CurveCollection(new Curve(newV3(), c[4]));
+        var curves = new CurveCollection();
 
-        objCurves.forEach(function (c) {
-            curves.add(c[pitch], c[yaw], c[length]);
+        obj.curves.forEach(function (c) {
+            console.log('addCurve ' + JSON.stringify([newV3(c[0], c[1], c[2]), c[3]]));
+            curves.add(newV3(c[0], c[1], c[2]), c[3]);
         });
 
-        return curves;*/
-        return null;
+        return curves;
     };
 
     function RollerCoasterGeometry(curve, size) {
@@ -990,10 +996,10 @@
             }
         }
 
-        function addCurve(V, L) {
+        function addCurve(T, L) {
             createNewProjectIfNecessary(function () {
                 removeAllCurves();
-                curve.add(V, L);
+                curve.add(T, L);
                 createRollerCoaster(scene);
             }, alert);
         }
