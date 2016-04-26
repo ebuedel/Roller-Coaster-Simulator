@@ -1,1 +1,0 @@
-Roller Coaster Simulator is an application where users can create and ride roller coasters of their own design.
