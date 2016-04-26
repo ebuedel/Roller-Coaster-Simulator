@@ -215,6 +215,11 @@
             }, alert);
         }
 
+        function setProjectNameLabel(value) {
+            $('#project-name').text(value);
+            $('#project-name-wrapper')[!isUndefined(value) && value.length > 0 ? 'show' : 'hide']();
+        }
+
         function onOpenButtonClicked() {
             var table = $('#project-list');
             table.html('<tr><th>Filename</th><th>Last Modified</th><th>Size</th></tr>');
@@ -233,8 +238,7 @@
                         a.click(function () {
                             var name = this.textContent;
                             app.loadProject(name, function (value) {
-                                $('#project-name').text(name);
-                                $('#project-name-wrapper').show();
+                                setProjectNameLabel(value);
                                 hideMetroDialog('#file-open-dialog');
                             }, alert);
                         });
@@ -308,6 +312,7 @@
         }
 
         this.show = show;
+        this.setProjectNameLabel = setProjectNameLabel;
 
         this.options = {
             antialias: {
@@ -338,6 +343,10 @@
     function Curve(ox, oy, oz, p, y, l, i, yi) {
         var point = newV3();
         var tangent = newV3();
+
+        this.getOffset = function () {
+            return [ ox, oy, oz ];
+        };
 
         this.getPitch = function () {
             return p + yi;
@@ -435,16 +444,25 @@
             return {
                 modified: Date.now(),
                 format: [ 'pitch', 'yaw', 'length' ],
+                offset: curves[0].getOffset(),
                 curves: a
             };
         };
     }
 
-    CurveCollection.parse = function (obj) {
+    CurveCollection.parse = function (str) {
+        var obj;
+
+        try {
+            obj = JSON.parse(str);
+        } catch (error) {
+            return null;
+        }
+
         var objFormat = obj.format;
         var objCurves = obj.curves;
-
-        if (isUndefined(objFormat) || isUndefined(objCurves))
+        var objOffset = obj.offset;
+        if (isUndefined(objFormat) || isUndefined(objCurves) || isUndefined(objOffset))
             return null;
 
         var indices = {};
@@ -455,8 +473,12 @@
         var pitch = indices.pitch;
         var yaw = indices.yaw;
         var length = indices.length;
+        var c = obj.curves.shift();
+        var curves = new CurveCollection(new Curve(
+            objOffset[0], objOffset[1], objOffset[2],
+            c[pitch], c[yaw],  c[length],
+            0, 1e-10));
 
-        var curves = new CurveCollection(obj.curves.shift());
         objCurves.forEach(function (c) {
             curves.add(c[pitch], c[yaw], c[length]);
         });
@@ -854,7 +876,7 @@
 
         function saveIfNecessary(onsuccess, onerror) {
             // TODO: Only save if the length of the curve is greater than one.
-            if (currentProjectName !== null && curve !== null) {
+            if (currentProjectName !== null && curve.length > 1) {
                 saveCurrentProject(function () {
                     lastAutoSave = Date.now();
                     $.Notify({
@@ -862,10 +884,10 @@
                         content: ' ',
                         type: 'success'
                     });
-                    onsuccess();
+                    onsuccess(true);
                 }, onerror);
             } else {
-                onsuccess();
+                onsuccess(false);
             }
         }
 
@@ -884,10 +906,11 @@
         // TODO: Get lastAutoSave from the coaster data on load...
 
         function createNewProject(onsuccess, onerror) {
-            saveIfNecessary(function () {
-                getProjectList(function (list) {
-                    onsuccess(currentProjectName = generateProjectName('Untitled ', list));
-                }, onerror);
+            saveIfNecessary(function (neededToSave) {
+                if (neededToSave) {
+                    currentProjectName = null;
+                    createNewProjectIfNecessary(onsuccess, onerror);
+                }
             }, onerror);
         }
 
@@ -917,7 +940,9 @@
                 }, function (response) {
                     var error = response.error;
                     if (isUndefined(error)) {
+                        removeAllCurves();
                         curve = CurveCollection.parse(response.value);
+                        createRollerCoaster(scene);
                         if (curve !== null)
                             onsuccess();
                         else
@@ -942,6 +967,11 @@
         }
 
         function deleteCurrentProject(onsuccess, onerror) {
+            if (currentProjectName === null) {
+                onsuccess();
+                return;
+            }
+
             postJSON({
                 type: 'set',
                 user: currentUser,
@@ -949,6 +979,9 @@
             }, function (response) {
                 var error = response.error;
                 if (isUndefined(error)) {
+                    removeAllCurves();
+                    curve = new CurveCollection();
+                    createRollerCoaster(scene);
                     currentProjectName = null;
                     onsuccess();
                 } else {
@@ -957,22 +990,43 @@
             });
         }
 
+        function createNewProjectIfNecessary(onsuccess, onerror) {
+            if (currentProjectName === null) {
+                getProjectList(function (list) {
+                    removeAllCurves();
+                    curve = new CurveCollection();
+                    createRollerCoaster(scene);
+                    currentProjectName = generateProjectName('Untitled ', list);
+                    userInterface.setProjectNameLabel(currentProjectName);
+                    onsuccess(currentProjectName);
+                }, onerror);
+            } else {
+                onsuccess();
+            }
+        }
+
         function addCurve(yaw, pitch, length) {
-            removeAllCurves();
-            curve.add(yaw, pitch, length);
-            createRollerCoaster(scene);
+            createNewProjectIfNecessary(function () {
+                removeAllCurves();
+                curve.add(yaw, pitch, length);
+                createRollerCoaster(scene);
+            }, alert);
         }
 
         function undoCurve() {
-            removeAllCurves();
-            curve.undo();
-            createRollerCoaster(scene);
+            if (currentProjectName !== null && curve !== null) {
+                removeAllCurves();
+                curve.undo();
+                createRollerCoaster(scene);
+            }
         }
 
         function redoCurve() {
-            removeAllCurves();
-            curve.redo();
-            createRollerCoaster(scene);
+            if (currentProjectName !== null && curve !== null) {
+                removeAllCurves();
+                curve.redo();
+                createRollerCoaster(scene);
+            }
         }
 
         function setAntialias(value) {
@@ -986,6 +1040,9 @@
         }
 
         curve = new CurveCollection();
+        createNewProjectIfNecessary(function () {
+            // Do nothing.
+        }, alert);
         scene = createScene();
         userInterface = new UserInterface(this);
         currentAntialiasValue = screen.width * screen.height <= 1920 * 1080;
