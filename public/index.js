@@ -300,11 +300,12 @@
         }
 
         function onCreateButtonClicked() {
-            var yaw = getSliderValue('#yaw-slider') * Math.PI / 180;
-            var pitch = getSliderValue('#pitch-slider') * Math.PI / 180;
-            var length = getSliderValue('#length-slider');
+            var x = getSliderValue('#x-slider');
+            var y = getSliderValue('#y-slider');
+            var z = getSliderValue('#z-slider');
+            var L = getSliderValue('#length-slider');
 
-            app.addCurve(pitch, yaw, length);
+            app.addCurve(newV3(x, y, z), L);
         }
 
         function show() {
@@ -340,50 +341,41 @@
         $('#fb-login-button').onlogin = checkLoginState;
     }
 
-    function Curve(ox, oy, oz, p, y, l, i, yi) {
+    function Curve(V, L, P, T) {
+        if (isUndefined(P)) P = newV3(0, 0, 2);
+        if (isUndefined(T)) T = newV3(1, 1, .1);
+
+        V.normalize();
+        T.normalize();
+
         var point = newV3();
         var tangent = newV3();
 
-        this.getOffset = function () {
-            return [ ox, oy, oz ];
-        };
-
-        this.getPitch = function () {
-            return p + yi;
-        };
-
-        this.getYaw = function () {
-            return y + i + 1e-10;
-        };
+        this.getVector = function () {
+            return V;
+        }
 
         this.getLength = function () {
-            return l;
-        };
+            return L;
+        }
 
         this.getPointAt = function (t) {
             return point.set(
-                ox + 2.*t*(1. - 1.*t + t*Math.cos(0.5*y))*Math.cos(yi)*
-                Math.sin(0.5*y) - 1.*l*t*Math.sin(yi) +
-                t*Math.cos(i)*(l / Math.tan(yi) +
-                    2.*(1. - 1.*t + t*Math.cos(0.5*y))*Math.sin(0.5*y))*
-                Math.sin(yi) - 1.*l*t*Math.sin(i)*Math.tan(0.5*p) +
-                l*Math.pow(t,2)*Math.sin(i)*Math.tan(0.5*p),
-                oy + t*Math.cos(yi)*(l*Math.sin(i) +
-                    2.*(1. - 1.*t + t*Math.cos(0.5*y))*Math.sin(0.5*y)) +
-                t*(-1.*l + 2.*(1. - 1.*t + t*Math.cos(0.5*y))*Math.sin(i)*
-                   Math.sin(0.5*y))*Math.sin(yi) +
-                l*t*Math.cos(i)*Math.tan(0.5*p) -
-                1.*l*Math.pow(t,2)*Math.cos(i)*Math.tan(0.5*p),
-                oz + 2.*t*(1. - 1.*t + t*Math.cos(0.5*y))*Math.cos(yi)*
-                Math.sin(0.5*y) - 1.*l*t*Math.sin(yi)
+                    P.x + L * t * (t*(T.x - V.x) + 2 * V.x),
+                    P.y + L * t * (t*(T.y - V.y) + 2 * V.y),
+                    P.z + L * t * (t*(T.z - V.z) + 2 * V.z)
                 ).multiplyScalar(20);
         };
 
         this.getTangentAt = function (t) {
             var delta = 0.0001;
 
-            return tangent.copy(this.getPointAt(Math.min(1, t + delta)))
-                .sub(this.getPointAt(Math.max(0, t - delta))).normalize();
+            var q1 = this.getPointAt(Math.min(1, t + delta));
+            q1 = newV3(q1.x/20,q1.y/20,q1.z/20);
+            var q2 = this.getPointAt(Math.max(0, t - delta));
+            q2 = newV3(q2.x/20,q2.y/20,q2.z/20);
+
+            return tangent.copy(q1.sub(q2).normalize());
         };
     }
 
@@ -392,17 +384,24 @@
         this.sum = firstCurve ? firstCurve.getLength() : 5;
         var point = newV3();
         var tangent = newV3();
-        var curves = [ firstCurve || new Curve(2, 2, 2, 0, 0, 5, 0, 1e-10) ];
+        var curves = [ firstCurve || new Curve(newV3(1, 0, 0), 5) ];
         var redoBuffer = [];
 
-        this.add = function (p, y, l) {
+        this.add = function (T, L) {
             if (length !== 0) {
                 redoBuffer = [];
                 var lastCurve = curves[curves.length - 1];
-                var last = lastCurve.getPointAt(1);
-                curves.push(new Curve(last.x / 20, last.y / 20, last.z / 20, p, y, l, lastCurve.getPitch(), lastCurve.getYaw()));
+                var P = lastCurve.getPointAt(1);
+                P = newV3(P.x / 20, P.y / 20, P.z / 20);
+                var V = lastCurve.getTangentAt(1);
+                curves.push(new Curve(V, L, P, T));
+
+                lastCurve = curves[curves.length - 1];
+                var Q = lastCurve.getPointAt(0);
+                Q = newV3(Q.x / 20, Q.y / 20, Q.z / 20);
+
                 this.length++;
-                this.sum += l;
+                this.sum += L;
             }
         };
         
@@ -439,19 +438,18 @@
         this.serialize = function () {
             var a = [];
             curves.forEach(function (c) {
-                a.push([c.getPitch(), c.getYaw(), c.getLength()]);
+                a.push(c.getVector, c.getLength);
             });
             return {
                 modified: Date.now(),
-                format: [ 'pitch', 'yaw', 'length' ],
-                offset: curves[0].getOffset(),
+                //offset: curves[0].getOffset(),
                 curves: a
             };
         };
     }
 
     CurveCollection.parse = function (str) {
-        var obj;
+        /*var obj;
 
         try {
             obj = JSON.parse(str);
@@ -459,31 +457,18 @@
             return null;
         }
 
-        var objFormat = obj.format;
-        var objCurves = obj.curves;
-        var objOffset = obj.offset;
-        if (isUndefined(objFormat) || isUndefined(objCurves) || isUndefined(objOffset))
-            return null;
+        //FIX SERIALIZE
 
-        var indices = {};
-        objFormat.forEach(function (s, i) {
-            indices[s] = i;
-        });
 
-        var pitch = indices.pitch;
-        var yaw = indices.yaw;
-        var length = indices.length;
         var c = obj.curves.shift();
-        var curves = new CurveCollection(new Curve(
-            objOffset[0], objOffset[1], objOffset[2],
-            c[pitch], c[yaw],  c[length],
-            0, 1e-10));
+        var curves = new CurveCollection(new Curve(newV3(), c[4]));
 
         objCurves.forEach(function (c) {
             curves.add(c[pitch], c[yaw], c[length]);
         });
 
-        return curves;
+        return curves;*/
+        return null;
     };
 
     function RollerCoasterGeometry(curve, size) {
@@ -779,7 +764,7 @@
             var sum = curve.sum;
 
             scene.add(new _.Mesh(
-                coasterGeo = new RollerCoasterGeometry(curve, sum),
+                coasterGeo = new RollerCoasterGeometry(curve, 100),
                 new _.MeshStandardMaterial({
                     roughness: 0.1,
                     metalness: 0,
@@ -796,7 +781,7 @@
             scene.add(mesh);
 
             mesh = new _.Mesh(
-                shadowGeo = new RollerCoasterShadowGeometry(curve, sum),
+                shadowGeo = new RollerCoasterShadowGeometry(curve, 100),
                 new _.MeshBasicMaterial({
                     color: 0x000000,
                     opacity: 0.1,
@@ -1005,10 +990,10 @@
             }
         }
 
-        function addCurve(yaw, pitch, length) {
+        function addCurve(V, L) {
             createNewProjectIfNecessary(function () {
                 removeAllCurves();
-                curve.add(yaw, pitch, length);
+                curve.add(V, L);
                 createRollerCoaster(scene);
             }, alert);
         }
