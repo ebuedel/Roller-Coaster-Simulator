@@ -148,8 +148,8 @@
                 case 70: /* F */ velocity.y = -1; break;
                 case 87: /* W */ velocity = forward.clone(); break;
                 case 83: /* S */ velocity = forward.clone().multiplyScalar(-1); break;
-                case 68: /* D */ rotation = 0.05 * Math.PI/180; break;
-                case 65: /* A */ rotation = 0.05 * -Math.PI/180; break;
+                case 68: /* D */ rotation = Math.PI/180; break;
+                case 65: /* A */ rotation = -Math.PI/180; break;
             }
         }
 
@@ -211,6 +211,8 @@
     }
 
     function UserInterface(app) {
+        var undoRedoSound, addCurveSound;
+
         function checkLoginState() {
             var fbLoginStatus = $('#fb-login-status');
 
@@ -281,7 +283,7 @@
                 }
 
                 table.append(tbody);
-            });
+            }, alert);
         }
 
         function onRenameButtonClicked() {
@@ -301,10 +303,12 @@
         }
 
         function onUndoButtonClicked() {
+            undoRedoSound.play();
             app.undoCurve();
         }
 
         function onRedoButtonClicked() {
+            undoRedoSound.play();
             app.redoCurve();
         }
 
@@ -335,6 +339,7 @@
             var z = getSliderValue('#z-slider');
             var L = getSliderValue('#length-slider');
 
+            addCurveSound.play();
             app.addCurve(newV3(x, y, z), L);
         }
 
@@ -344,6 +349,10 @@
 
         this.show = show;
         this.setProjectNameLabel = setProjectNameLabel;
+        undoRedoSound = document.createElement('audio');
+        undoRedoSound.setAttribute('src', 'sounds/undoRedo.ogg');
+        addCurveSound = document.createElement('audio');
+        addCurveSound.setAttribute('src', 'sounds/addCurve.ogg');
 
         this.options = {
             antialias: {
@@ -756,7 +765,8 @@
             coasterGeo, liftersGeo, shadowGeo,
             autoSaveInterval = 1e5, lastAutoSave = 0,
             currentUser = 'TestUser', currentProjectName = null, currentAntialiasValue,
-            cameraModeProperties, currentCameraMode = 'editing', last = 0, progress = 0, velocity = 0, currentCamera;
+            cameraModeProperties, currentCameraMode = 'editing', last = 0, progress = 0, velocity = 0, currentCamera,
+            saveSound;
 
         function createEnvironment(scene) {
             // Land
@@ -873,7 +883,7 @@
             flyCamera.position.y = 300;
             flyCamera.position.z = 300;
             flyCamera.lookAt(newV3());
-            flyControls = new FlyControls(flyCamera, 0.25);
+            flyControls = new FlyControls(flyCamera, 5);
 
             $window.resize(function () {
                 var aspect = $window.width() / $window.height();
@@ -939,6 +949,7 @@
                         content: ' ',
                         type: 'success'
                     });
+                    saveSound.play();
                     onsuccess(true);
                 }, onerror);
             } else {
@@ -1103,8 +1114,14 @@
         }
 
         function setAntialias(value) {
-            if (value !== currentAntialiasValue)
+            if (value !== currentAntialiasValue) {
+                scene = createScene();
                 createRenderer({ antialiasing: currentAntialiasValue = value });
+
+                currentRenderer = renderer;
+                initializeVR(renderer, flyControls.camera);
+                $window.trigger('resize');
+            }
         }
 
         function run() {
@@ -1132,8 +1149,7 @@
                 update: function (time) {
                     var delta = time - last;
                     last = time;
-                    delta *= 100;
-                    progress = (progress + velocity * delta / 1000) % 1;
+                    progress = (progress + velocity * delta / curve.sum) % 1;
                     train.position.copy(curve.getPointAt(progress));
                     train.position.y += 3;
 
@@ -1155,6 +1171,8 @@
         createRenderer({ antialias: currentAntialiasValue });
         currentRenderer = renderer;
         initializeVR(renderer, flyControls.camera);
+        saveSound = document.createElement('audio');
+        saveSound.setAttribute('src', 'sounds/save.ogg');
 
         $window.resize(function () {
             renderer.setSize($window.width(), $window.height());

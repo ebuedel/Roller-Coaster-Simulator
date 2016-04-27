@@ -1,28 +1,9 @@
-//aregerg
-
 'use strict';
 
 var fs = require('fs');
 var http = require('http');
 var pouchdb = require('pouchdb');
 pouchdb.plugin(require('pouchdb-upsert'));
-
-process.env.VCAP_SERVICES = JSON.stringify({
-    "cloudantNoSQLDB": [
-      {
-         "name": "Cloudant NoSQL DB-8z",
-         "label": "cloudantNoSQLDB",
-         "plan": "Shared",
-         "credentials": {
-            "username": "f6afa7c1-0c96-4b4b-82e0-e649b8b1d6c5-bluemix",
-            "password": "807fc03f1359a1aeb7f0338d623cab60bc3d2eda1154b250244033d8c6814c27",
-            "host": "f6afa7c1-0c96-4b4b-82e0-e649b8b1d6c5-bluemix.cloudant.com",
-            "port": 443,
-            "url": "https://f6afa7c1-0c96-4b4b-82e0-e649b8b1d6c5-bluemix:807fc03f1359a1aeb7f0338d623cab60bc3d2eda1154b250244033d8c6814c27@f6afa7c1-0c96-4b4b-82e0-e649b8b1d6c5-bluemix.cloudant.com"
-         }
-      }
-   ]
-});
 
 function handlePostRequest(requestObject, callback) {
     function isString(x) { return typeof x === 'string'; }
@@ -32,9 +13,7 @@ function handlePostRequest(requestObject, callback) {
     function handler(error, response) {
         if (error) {
             console.log(error);
-            //callback(error);
         } else {
-            //callback({});
         }
     }
 
