@@ -12,6 +12,8 @@
     <script defer src="index.js"></script>
     <script defer src="https://code.jquery.com/jquery-2.2.3.min.js"></script>
     <script defer src="https://cdn.rawgit.com/mrdoob/three.js/master/build/three.min.js"></script>
+    <script defer src="http://mozvr.com/demos/sechelt/js/VRControls.js"></script>
+    <script defer src="http://mozvr.com/demos/sechelt/js/VREffect.js"></script>
     <script defer src="https://cdn.rawgit.com/olton/Metro-UI-CSS/master/build/js/metro.min.js"></script>
     <script defer src="https://connect.facebook.net/en_US/sdk.js"></script>
 
@@ -106,10 +108,10 @@
         <p>Enter a new name for your project.</p>
         <div class="align-center">
             <div class="input-control text">
-                <input type="text">
+                <input type="text" id="file-rename-text">
             </div>
             <a class="button" id="file-rename-ok-button">OK</a>
-            <div id="rename-message"></div>
+            <div id="file-rename-message"></div>
         </div>
     </div>
 
@@ -117,12 +119,14 @@
             data-role="dialog,draggable" data-drag-element=".heading" data-close-button="true" data-width="500"
             data-overlay="true" data-overlay-color="op-dark" data-overlay-click-close="true">
         <h1 class="heading">Options</h1>
-        <br><p>
-        <label class="switch">
+        <p class="padding20"><label class="switch">
             <input type="checkbox" id="options-dialog-antialias">
             <span class="check"></span>
-        </label> Antialias
-        <br><br><br><br>More to come...<br>
+        </label> Antialias</p>
+        <p class="padding20"><label class="switch">
+            <input type="checkbox" id="options-dialog-enable-vr">
+            <span class="check"></span>
+        </label> Enable VR (See <a href="https://webvr.info/">here</a> for more information.)</p>
         <div class="align-center">
             <a class="button" id="options-dialog-save-button">Save</a>
         </div>

@@ -1,8 +1,6 @@
 (function (window) {
     'use strict';
 
-    // TODO: Use Metro UI notify system instead of alert to notify user of error.
-
     var JSON = window.JSON,
         Math = window.Math,
         location = window.location,
@@ -17,7 +15,20 @@
         return typeof x === 'undefined';
     }
 
+    function alert(caption, content) {
+        $.Notify({
+            caption: caption,
+            content: content || ' ',
+            type: 'alert'
+        });
+    }
+
     function postJSON(object, success) {
+        if (location.hostname !== 'roller-coaster-simulator-vr.mybluemix.net') {
+            success({ error: 'Wrong host!' });
+            return;
+        }
+
         $.ajax({
             type: 'POST',
             url: location.hostname,
@@ -67,7 +78,6 @@
         $document = $(window.document);
         $window = $(window);
         _ = window.THREE;
-        fb = window.FB;
     }
 
     function initializeGlobalVectors() {
@@ -79,11 +89,19 @@
     }
 
     function fbAsyncInit() {
+        fb = FB;
         fb.init({
             appId: '637237206431651',
             xfbml: true,
             version: 'v2.6'
         });
+    }
+
+    function onWindowLoad() {
+        importGlobals();
+        initializeGeometryPrototypes();
+        initializeGlobalVectors();
+        new App().run();
     }
 
     function EventMap(namespace, events) {
@@ -167,13 +185,17 @@
             camera.rotation.y += rotation;
         }
 
+        function reset() {
+            velocity = newV3();
+            rotation = 0;
+            totalRotation = getCameraXZRotation();
+        }
+
         function dispose() {
             eventMap.dispose();
         }
 
-        velocity = newV3();
-        rotation = 0;
-        totalRotation = getCameraXZRotation();
+        reset();
         borderSize = getBorderSize();
         eventMap = new EventMap('flyControls', [
             [ $window, 'keydown', onWindowKeyDown ],
@@ -184,6 +206,7 @@
         ]);
         this.camera = camera;
         this.update = update;
+        this.reset = reset;
         this.dispose = dispose;
     }
 
@@ -193,10 +216,12 @@
 
             fb.getLoginStatus(function (response) {
                 if (response.status === 'connected') {
-                    fb.api('/me', function(response) {
-                        $('#status').html('Thanks for logging in, ' + response.name + '!');
-                        // TODO: Add sign out button.
-                        // TODO: Set current user and enable all save related functionality.
+                    fb.api('/me', function (response) {
+                        var name = response.name;
+                        fbLoginStatus.text('Thanks for logging in, ' + name + '!');
+                        app.setCurrentUser(name);
+                        // TODO: Add sign out button and save before sign-out.
+                        // TODO: Enable all save related functionality.
                     });
                 } else if (response.status === 'not_authorized') {
                     fbLoginStatus.text('Please log into this app.');
@@ -207,11 +232,9 @@
         }
 
         function onNewButtonClicked() {
-            // TODO: Save the current roller coaster.
             app.createNewProject(function (name) {
                 $('#project-name').text(name);
                 $('#project-name-wrapper').show();
-                // TODO: Clear current roller coaster.
             }, alert);
         }
 
@@ -262,10 +285,13 @@
         }
 
         function onRenameButtonClicked() {
-            // TODO: Ensure that new name is not already taken.
-            // TODO: Delete current roller coaster.
-            // TODO: Save current roller coaster under new name.
             showMetroDialog('#file-rename-dialog');
+        }
+
+        function onRenameOKButtonClicked() {
+            app.renameCurrentProject($('#file-rename-text').text(), function () {
+                hideMetroDialog('#file-rename-dialog');
+            }, alert);
         }
 
         function onDeleteButtonClicked() {
@@ -288,14 +314,16 @@
 
         function onOptionsDialogSaveButtonClicked() {
             app.setAntialias($('#options-dialog-antialias').is(':checked'));
+            app.setVRMode($('#options-dialog-enable-vr').is(':checked'));
             hideMetroDialog('#options-dialog');
         }
 
         function onPlayButtonClicked() {
             var text = $('#play-button > .text');
-            text.text({ Play: 'Stop', Stop: 'Play' }[text.text()]);
+            var content = text.text();
+            app.setCameraMode({ Play: 'playing', Stop: 'editing' }[content]);
+            text.text({ Play: 'Stop', Stop: 'Play' }[content]);
             $('#play-button > .icon').toggleClass('mif-play').toggleClass('mif-stop');
-            // TODO: Play the roller coaster.
         }
 
         function getSliderValue(selector) {
@@ -451,7 +479,7 @@
             });
             console.log(JSON.stringify(a));
             return {
-                modified: Date.now(),
+                lastAutoSave: Date.now(),
                 curves: a
             };
         };
@@ -557,7 +585,7 @@
             tmp1.crossVectors(forward, right);
             quaternion.setFromAxisAngle(tmp1, Math.atan2(forward.x, forward.z));
 
-            drawShape(triangle, color2);
+            if (i % 5 == 0) drawShape(triangle, color2);
             extrudeShape(circle1, offset.set(0, -1.25, 0), color2);
             extrudeShape(circle2, offset.set(2, 0, 0), color1);
             extrudeShape(circle2, offset.set(-2, 0, 0), color1);
@@ -724,10 +752,12 @@
     }
 
     function App() {
-        var renderer, userInterface, flyControls, scene, train, curve,
+        var renderer, currentRenderer, vrEffect, vrControls,
+            userInterface, flyControls, scene, train, curve,
             coasterGeo, liftersGeo, shadowGeo,
             autoSaveInterval = 1e5, lastAutoSave = 0,
-            currentUser = 'TestUser', currentProjectName = null, currentAntialiasValue;
+            currentUser = 'TestUser', currentProjectName = null, currentAntialiasValue,
+            cameraModeProperties, currentCameraMode = 'editing', last = 0, progress = 0, velocity = 0, currentCamera;
 
         function createEnvironment(scene) {
             // Land
@@ -770,7 +800,7 @@
             var sum = curve.sum;
 
             scene.add(new _.Mesh(
-                coasterGeo = new RollerCoasterGeometry(curve, 100),
+                coasterGeo = new RollerCoasterGeometry(curve, sum * 10),
                 new _.MeshStandardMaterial({
                     roughness: 0.1,
                     metalness: 0,
@@ -778,7 +808,7 @@
                 })));
 
             var mesh = new _.Mesh(
-                liftersGeo = new RollerCoasterLiftersGeometry(curve, 10),
+                liftersGeo = new RollerCoasterLiftersGeometry(curve, length * 3),
                 new _.MeshStandardMaterial({
                     roughness: 0.1,
                     metalness: 0
@@ -787,7 +817,7 @@
             scene.add(mesh);
 
             mesh = new _.Mesh(
-                shadowGeo = new RollerCoasterShadowGeometry(curve, 100),
+                shadowGeo = new RollerCoasterShadowGeometry(curve, sum * 10),
                 new _.MeshBasicMaterial({
                     color: 0x000000,
                     opacity: 0.1,
@@ -807,62 +837,77 @@
             shadowGeo.removeAttribute('position');
         }
 
-        function createRenderer() {
+        function createRenderer(options) {
             if (!isUndefined(renderer)) $(renderer.domElement).remove();
 
-            renderer = new _.WebGLRenderer({ antialias: false });
+            renderer = new _.WebGLRenderer(options);
             renderer.setClearColor(0xd0d0ff);
             renderer.setPixelRatio(devicePixelRatio);
 
-            $window.trigger('resize');
             $('body').append(renderer.domElement);
         }
 
+        function initializeVR(renderer, camera) {
+            vrEffect = new _.VREffect(renderer);
+            vrControls = new _.VRControls(camera);
+        }
+
         function createScene() {
+            var scene = new _.Scene();
+
+            var light = new _.HemisphereLight(0xfff0f0, 0x606066);
+            light.position.set(1, 1, 1);
+            scene.add(light);
+
             train = new _.Object3D();
+            scene.add(train);
 
             var camera = new _.PerspectiveCamera(40, $window.width() / $window.height(), 1, 5000);
-            camera.position.x = 0;
-            camera.position.y = 300;
-            camera.position.z = 300;
-            camera.lookAt(newV3(0, 0, 0));
+            camera.rotation.y = Math.PI;
+            camera.name = 'camera';
+            train.add(camera);
 
-            flyControls = new FlyControls(camera, 5);
+            var flyCamera = new _.PerspectiveCamera(40, $window.width() / $window.height(), 1, 5000);
+            flyCamera.position.x = 0;
+            flyCamera.position.y = 300;
+            flyCamera.position.z = 300;
+            flyCamera.lookAt(newV3());
+            flyControls = new FlyControls(flyCamera, 5);
 
-            var scene = new _.Scene();
-            scene.add(train);
-            scene.add(new _.HemisphereLight(0xfff0f0, 0x606066));
+            $window.resize(function () {
+                var aspect = $window.width() / $window.height();
+                function resize(camera) {
+                    camera.aspect = aspect;
+                    camera.updateProjectionMatrix();
+                }
+                resize(camera);
+                resize(flyCamera);
+            });
 
             createEnvironment(scene);
             createRollerCoaster(scene);
 
-            $window.resize(function () {
-                camera.aspect = $window.width() / $window.height();
-                camera.updateProjectionMatrix();
-                renderer.setSize($window.width(), $window.height());
-            });
-
             return scene;
         }
 
-        function animate(/* time */) {
+        function animate(time) {
             requestAnimationFrame(animate);
+            var p = cameraModeProperties[currentCameraMode];
+            p.update(time);
+            currentRenderer.render(scene, p.getCamera());
+        }
 
-            /*
-            var delta = time - last;
-            last = time;
+        function setCameraMode(value) {
+            currentCameraMode = value;
+            last = 0, progress = 0, velocity = 0;
+        }
 
-            progress = (progress + velocity * delta / 1000) % 1;
-            train.position.copy(curve.getPointAt(progress));
-            train.position.y += 3;
+        function setVRMode(value) {
+            currentRenderer = value ? vrEffect : renderer;
+        }
 
-            var tangent = curve.getTangentAt(progress);
-            velocity = Math.max(velocity - tangent.y * 0.000030, 0.0008);
-            train.lookAt(train.position.clone().add(tangent));
-            */
-
-            flyControls.update();
-            renderer.render(scene, flyControls.camera);
+        function setCurrentUser(value) {
+            currentUser = value;
         }
 
         function saveIfNecessary(onsuccess, onerror) {
@@ -894,7 +939,11 @@
             return prefixString + n;
         }
 
-        // TODO: Get lastAutoSave from the coaster data on load...
+        function isProjectNameAvailable(name, onsuccess, onerror) {
+            getProjectList(function (list) {
+                onsuccess(list.indexOf(name) === -1);
+            }, onerror);
+        }
 
         function createNewProject(onsuccess, onerror) {
             saveIfNecessary(function (neededToSave) {
@@ -921,6 +970,18 @@
             });
         }
 
+        function renameCurrentProject(name, onsuccess, onerror) {
+            isProjectNameAvailable(name, function (isAvailable) {
+                if (isAvailable) {
+                    // TODO: Save current roller coaster under new name.
+                    // TODO: If successful, delete current roller coaster in database.
+                    $('file-rename-message').text(' ');
+                } else {
+                    $('file-rename-message').text('Sorry, that name is already being used.');
+                }
+            }, onerror);
+        }
+
         function loadProject(name, onsuccess, onerror) {
             saveIfNecessary(function () {
                 currentProjectName = name;
@@ -934,6 +995,7 @@
                         removeAllCurves();
                         curve = CurveCollection.parse(response.value);
                         createRollerCoaster(scene);
+                        lastAutoSave = response.value.lastAutoSave;
                         if (curve !== null)
                             onsuccess();
                         else
@@ -997,11 +1059,12 @@
         }
 
         function addCurve(T, L) {
-            createNewProjectIfNecessary(function () {
+            // XXX: Uncomment these lines before you commit!
+            //createNewProjectIfNecessary(function () {
                 removeAllCurves();
                 curve.add(T, L);
                 createRollerCoaster(scene);
-            }, alert);
+            //}, alert);
         }
 
         function undoCurve() {
@@ -1026,22 +1089,63 @@
         }
 
         function run() {
+            $window.trigger('resize');
             requestAnimationFrame(animate);
             userInterface.show();
         }
 
+        cameraModeProperties = {
+            editing: {
+                getCamera: function () {
+                    return flyControls.camera;
+                },
+
+                update: function () {
+                    flyControls.update();
+                }
+            },
+
+            playing: {
+                getCamera: function () {
+                    return train.getObjectByName('camera');
+                },
+
+                update: function (time) {
+                    var delta = time - last;
+                    last = time;
+                    delta *= 100;
+                    progress = (progress + velocity * delta / 1000) % 1;
+                    train.position.copy(curve.getPointAt(progress));
+                    train.position.y += 3;
+
+                    var tangent = curve.getTangentAt(progress);
+                    velocity = Math.max(velocity - tangent.y * 0.000030, 0.0008);
+                    train.lookAt(train.position.clone().add(tangent));
+
+                    vrControls.update();
+                }
+            }
+        }
+
         curve = new CurveCollection();
-        createNewProjectIfNecessary(function () {
-            // Do nothing.
-        }, alert);
+        createNewProjectIfNecessary(function () { }, alert);
         scene = createScene();
         userInterface = new UserInterface(this);
         currentAntialiasValue = screen.width * screen.height <= 1920 * 1080;
         userInterface.options.antialias.set(currentAntialiasValue);
         createRenderer({ antialias: currentAntialiasValue });
+        currentRenderer = renderer;
+        initializeVR(renderer, flyControls.camera);
 
+        $window.resize(function () {
+            renderer.setSize($window.width(), $window.height());
+            vrEffect.setSize($window.width(), $window.height());
+        });
+
+        this.setCurrentUser = setCurrentUser;
         this.createNewProject = createNewProject;
         this.saveCurrentProject = saveCurrentProject;
+        this.renameCurrentProject = renameCurrentProject;
         this.deleteCurrentProject = deleteCurrentProject;
         this.loadProject = loadProject;
         this.getProjectList = getProjectList;
@@ -1050,16 +1154,11 @@
         this.redoCurve = redoCurve;
         this.addCurve = addCurve;
         this.setAntialias = setAntialias;
+        this.setCameraMode = setCameraMode;
+        this.setVRMode = setVRMode;
         this.run = run;
 
         setInterval(autoSave, autoSaveInterval);
-    }
-
-    function onWindowLoad() {
-        importGlobals();
-        initializeGeometryPrototypes();
-        initializeGlobalVectors();
-        new App().run();
     }
 
     window.fbAsyncInit = fbAsyncInit;
