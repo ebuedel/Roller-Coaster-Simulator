@@ -148,8 +148,8 @@
                 case 70: /* F */ velocity.y = -1; break;
                 case 87: /* W */ velocity = forward.clone(); break;
                 case 83: /* S */ velocity = forward.clone().multiplyScalar(-1); break;
-                case 68: /* D */ rotation = Math.PI/180; break;
-                case 65: /* A */ rotation = -Math.PI/180; break;
+                case 68: /* D */ rotation = 0.05 * Math.PI/180; break;
+                case 65: /* A */ rotation = 0.05 * -Math.PI/180; break;
             }
         }
 
@@ -320,9 +320,8 @@
 
         function onPlayButtonClicked() {
             var text = $('#play-button > .text');
-            var content = text.text();
-            app.setCameraMode({ Play: 'playing', Stop: 'editing' }[content]);
-            text.text({ Play: 'Stop', Stop: 'Play' }[content]);
+            app.setCameraMode({ Play: 'playing', Stop: 'editing' }[text.text()]);
+            text.text({ Play: 'Stop', Stop: 'Play' }[text.text()]);
             $('#play-button > .icon').toggleClass('mif-play').toggleClass('mif-stop');
         }
 
@@ -855,6 +854,8 @@
         function createScene() {
             var scene = new _.Scene();
 
+              scene.fog = new THREE.Fog(0xcacfde, 0, 3000);
+
             var light = new _.HemisphereLight(0xfff0f0, 0x606066);
             light.position.set(1, 1, 1);
             scene.add(light);
@@ -872,7 +873,7 @@
             flyCamera.position.y = 300;
             flyCamera.position.z = 300;
             flyCamera.lookAt(newV3());
-            flyControls = new FlyControls(flyCamera, 5);
+            flyControls = new FlyControls(flyCamera, 0.25);
 
             $window.resize(function () {
                 var aspect = $window.width() / $window.height();
@@ -899,11 +900,29 @@
 
         function setCameraMode(value) {
             currentCameraMode = value;
+
+            if (vrMode) {
+                if (value === 'playing') {
+                    vrEffect.setFullScreen(true);
+                    currentRenderer = value ? vrEffect : renderer;
+                } else if (value === 'editing') {
+                    currentRenderer = renderer;
+                }
+            }
+
             last = 0, progress = 0, velocity = 0;
+
+            if (value === 'editing') {
+                flyControls.camera.rotation.y = Math.PI;
+                flyControls.camera.lookAt(newV3());
+            }
+
+            $window.trigger('resize');
         }
 
+        var vrMode = false;
         function setVRMode(value) {
-            currentRenderer = value ? vrEffect : renderer;
+            vrMode = true;
         }
 
         function setCurrentUser(value) {
@@ -1141,6 +1160,17 @@
             renderer.setSize($window.width(), $window.height());
             vrEffect.setSize($window.width(), $window.height());
         });
+
+        function onFullscreenChange() {
+            var fs = document.fullScreen || document.mozFullScreen || document.webkitIsFullScreen;
+            if (!fs) {
+                setCameraMode('editing');
+            }
+        }
+
+        document.addEventListener("fullscreenchange", onFullscreenChange, false);
+        document.addEventListener("webkitfullscreenchange", onFullscreenChange, false);
+        document.addEventListener("mozfullscreenchange", onFullscreenChange, false);
 
         this.setCurrentUser = setCurrentUser;
         this.createNewProject = createNewProject;
